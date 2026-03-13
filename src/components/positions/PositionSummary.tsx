@@ -21,9 +21,9 @@ export function PositionSummary({ position }: PositionSummaryProps) {
         {d.width != null && <Row label="Breite" value={`${d.width} mm`} />}
         {d.height != null && <Row label="Höhe" value={`${d.height} mm`} />}
         {d.diameter != null && <Row label="Durchmesser" value={`${d.diameter} mm`} />}
-        {d.length != null && <Row label="Länge" value={`${d.length} mm`} />}
         <Row label="Wandstärke" value={`${d.wallThickness} mm`} />
         {d.bladeDiameter > 0 && <Row label="Blattdurchmesser" value={`${d.bladeDiameter} mm`} />}
+        <Row label="Max. Stückgewicht" value={`${d.maxSegmentWeight} kg`} />
         {position.notes && <Row label="Notizen" value={position.notes} />}
       </CardContent>
     </Card>

@@ -2,10 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, Trash2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { useOrder, useOrderActions } from "@/hooks/use-orders";
-import { STATUS_LABELS } from "@/types";
 import { PositionList } from "@/components/positions/PositionList";
 import { ExportDialog } from "@/components/export/ExportDialog";
 import { useState } from "react";
@@ -33,6 +30,15 @@ export function OrderPage() {
     navigate("/");
   };
 
+  const totalLm = order.positions.reduce(
+    (sum, p) => sum + (p.calculation?.totalLinearMeters ?? 0),
+    0
+  );
+  const totalMinutes = order.positions.reduce(
+    (sum, p) => sum + (p.calculation?.estimatedMinutes ?? 0),
+    0
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -40,15 +46,7 @@ export function OrderPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight">
-              {order.orderNumber || "Ohne Nummer"}
-            </h1>
-            <Badge variant={order.status === "exported" ? "default" : "outline"}>
-              {STATUS_LABELS[order.status]}
-            </Badge>
-          </div>
-          <p className="text-muted-foreground">{order.customerName}</p>
+          <h1 className="text-2xl font-bold tracking-tight">{order.name}</h1>
         </div>
         <Button variant="outline" onClick={() => setShowExport(true)}>
           <Download className="mr-2 h-4 w-4" />
@@ -59,66 +57,25 @@ export function OrderPage() {
         </Button>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Baustelle</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1 text-sm">
-            <p className="font-medium">{order.constructionSite.name}</p>
-            <p>{order.constructionSite.street}</p>
-            <p>
-              {order.constructionSite.zipCode} {order.constructionSite.city}
-            </p>
-            <Separator className="!my-3" />
-            <p>
-              <span className="text-muted-foreground">Kontakt:</span>{" "}
-              {order.constructionSite.contactPerson}
-            </p>
-            <p>
-              <span className="text-muted-foreground">Telefon:</span>{" "}
-              {order.constructionSite.phone}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Übersicht</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Positionen</span>
-              <span className="font-medium">{order.positions.length}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Laufmeter gesamt</span>
-              <span className="font-medium">
-                {order.positions
-                  .reduce((sum, p) => sum + (p.calculation?.totalLinearMeters ?? 0), 0)
-                  .toFixed(2)}{" "}
-                m
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Geschätzte Zeit</span>
-              <span className="font-medium">
-                {order.positions.reduce(
-                  (sum, p) => sum + (p.calculation?.estimatedMinutes ?? 0),
-                  0
-                )}{" "}
-                Min.
-              </span>
-            </div>
-            {order.notes && (
-              <>
-                <Separator />
-                <p className="text-muted-foreground">{order.notes}</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Übersicht</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-3 gap-4 text-sm">
+          <div>
+            <p className="text-muted-foreground">Positionen</p>
+            <p className="text-lg font-semibold">{order.positions.length}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Laufmeter gesamt</p>
+            <p className="text-lg font-semibold">{totalLm.toFixed(2)} m</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Geschätzte Zeit</p>
+            <p className="text-lg font-semibold">{totalMinutes} Min.</p>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">

@@ -14,8 +14,6 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useOrders } from "@/hooks/use-orders";
-import { Badge } from "@/components/ui/badge";
-import { STATUS_LABELS } from "@/types";
 
 export function AppSidebar() {
   const navigate = useNavigate();
@@ -31,7 +29,7 @@ export function AppSidebar() {
           </div>
           <div>
             <h2 className="text-sm font-semibold">Dimacon</h2>
-            <p className="text-xs text-muted-foreground">Planungsassistent</p>
+            <p className="text-xs text-muted-foreground">Kalkulator</p>
           </div>
         </div>
       </SidebarHeader>
@@ -72,15 +70,9 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     onClick={() => navigate(`/orders/${order.id}`)}
                     isActive={location.pathname.startsWith(`/orders/${order.id}`)}
-                    className="flex items-center justify-between"
                   >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <FileText className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{order.orderNumber || "Ohne Nr."}</span>
-                    </div>
-                    <Badge variant="outline" className="text-[10px] shrink-0">
-                      {STATUS_LABELS[order.status]}
-                    </Badge>
+                    <FileText className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{order.name}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -96,7 +88,7 @@ export function AppSidebar() {
 
       <SidebarFooter className="p-4">
         <p className="text-xs text-muted-foreground">
-          Dimacon Planung v0.1
+          Dimacon Kalkulator v0.1
         </p>
       </SidebarFooter>
     </Sidebar>

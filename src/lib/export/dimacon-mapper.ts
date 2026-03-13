@@ -1,14 +1,7 @@
 import type { Order, Position } from "@/types";
 
 export interface NewWorkingTO {
-  orderNumber: string;
-  customerName: string;
-  constructionSite: {
-    name: string;
-    street: string;
-    zipCode: string;
-    city: string;
-  };
+  name: string;
   positions: WorkingPositionTO[];
   notes: string;
 }
@@ -22,8 +15,7 @@ export interface WorkingPositionTO {
     height?: number;
     wallThickness: number;
     diameter?: number;
-    length?: number;
-    depth?: number;
+    maxSegmentWeight: number;
   };
   calculation: {
     totalCuts: number;
@@ -47,8 +39,7 @@ function mapPosition(position: Position): WorkingPositionTO {
       height: position.dimensions.height,
       wallThickness: position.dimensions.wallThickness,
       diameter: position.dimensions.diameter,
-      length: position.dimensions.length,
-      depth: position.dimensions.depth,
+      maxSegmentWeight: position.dimensions.maxSegmentWeight,
     },
     calculation: position.calculation
       ? {
@@ -67,14 +58,7 @@ function mapPosition(position: Position): WorkingPositionTO {
 
 export function mapOrderToWorkingTO(order: Order): NewWorkingTO {
   return {
-    orderNumber: order.orderNumber,
-    customerName: order.customerName,
-    constructionSite: {
-      name: order.constructionSite.name,
-      street: order.constructionSite.street,
-      zipCode: order.constructionSite.zipCode,
-      city: order.constructionSite.city,
-    },
+    name: order.name,
     positions: order.positions.map(mapPosition),
     notes: order.notes,
   };

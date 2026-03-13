@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OrderList } from "@/components/orders/OrderList";
@@ -8,27 +8,27 @@ import { useOrders } from "@/hooks/use-orders";
 
 export function DashboardPage() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const orders = useOrders();
   const [showNewOrder, setShowNewOrder] = useState(false);
-
-  const hasNew = searchParams.get("new") === "true";
+  const handled = useRef(false);
 
   useEffect(() => {
-    if (hasNew) {
+    const params = new URLSearchParams(location.search);
+    if (params.get("new") === "true" && !handled.current) {
+      handled.current = true;
       setShowNewOrder(true);
-      searchParams.delete("new");
-      setSearchParams(searchParams, { replace: true });
+      navigate("/", { replace: true });
     }
-  }, [hasNew]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [location.search, navigate]);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Aufträge</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Kalkulator</h1>
           <p className="text-muted-foreground">
-            {orders.length} {orders.length === 1 ? "Auftrag" : "Aufträge"} insgesamt
+            {orders.length} {orders.length === 1 ? "Auftrag" : "Aufträge"}
           </p>
         </div>
         <Button onClick={() => setShowNewOrder(true)}>

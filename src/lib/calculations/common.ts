@@ -30,16 +30,6 @@ export const CORE_DRILL_TIME: Record<MaterialType, number> = {
   naturstein: 15,
 };
 
-// Time per linear meter for floor saw
-export const FLOOR_SAW_TIME: Record<MaterialType, number> = {
-  beton: 6,
-  stahlbeton: 12,
-  mauerwerk: 4,
-  kalksandstein: 5,
-  ziegel: 4,
-  naturstein: 8,
-};
-
 // Standard blade diameters in mm
 export const STANDARD_BLADE_SIZES = [350, 400, 450, 500, 600, 700, 800, 900, 1000, 1200];
 

@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useOrderStore } from "@/stores/order-store";
 
 export function useOrders() {
@@ -9,13 +10,15 @@ export function useOrder(id: string | undefined) {
 }
 
 export function useOrderActions() {
-  return useOrderStore((state) => ({
-    addOrder: state.addOrder,
-    updateOrder: state.updateOrder,
-    deleteOrder: state.deleteOrder,
-    addPosition: state.addPosition,
-    updatePosition: state.updatePosition,
-    deletePosition: state.deletePosition,
-    reorderPositions: state.reorderPositions,
-  }));
+  return useOrderStore(
+    useShallow((state) => ({
+      addOrder: state.addOrder,
+      updateOrder: state.updateOrder,
+      deleteOrder: state.deleteOrder,
+      addPosition: state.addPosition,
+      updatePosition: state.updatePosition,
+      deletePosition: state.deletePosition,
+      reorderPositions: state.reorderPositions,
+    }))
+  );
 }

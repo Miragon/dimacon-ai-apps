@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { POSITION_TYPE_LABELS } from "@/types";
-import { useOrderActions } from "@/hooks/use-orders";
 import { Download, Copy, Check } from "lucide-react";
 
 interface ExportDialogProps {
@@ -22,7 +21,6 @@ interface ExportDialogProps {
 }
 
 export function ExportDialog({ order, open, onOpenChange }: ExportDialogProps) {
-  const { updateOrder } = useOrderActions();
   const [copied, setCopied] = useState(false);
   const json = exportOrderAsJson(order);
 
@@ -37,10 +35,9 @@ export function ExportDialog({ order, open, onOpenChange }: ExportDialogProps) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${order.orderNumber || "auftrag"}-export.json`;
+    a.download = `${order.name || "auftrag"}-export.json`;
     a.click();
     URL.revokeObjectURL(url);
-    updateOrder(order.id, { status: "exported" });
   };
 
   const totalLm = order.positions.reduce(
@@ -56,7 +53,7 @@ export function ExportDialog({ order, open, onOpenChange }: ExportDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Export: {order.orderNumber || "Auftrag"}</DialogTitle>
+          <DialogTitle>Export: {order.name}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">

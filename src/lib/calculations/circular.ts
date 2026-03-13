@@ -27,6 +27,8 @@ export function calculateCircularOpening(
       boreHolePositions: [
         { x: diameterMm / 2, y: diameterMm / 2, diameter: diameterMm, label: "Kernbohrung" },
       ],
+      totalWeight: 0,
+      segmentWeight: 0,
     };
   }
 
@@ -60,5 +62,7 @@ export function calculateCircularOpening(
     segments: holesNeeded,
     cutLines: [],
     boreHolePositions,
+    totalWeight: 0,
+    segmentWeight: 0,
   };
 }

@@ -1,27 +1,14 @@
-export type PositionType = "wanddurchbruch" | "deckendurchbruch" | "kernbohrung" | "fugenschnitt" | "bodensaegen";
+export type PositionType = "wanddurchbruch";
 export type OpeningShape = "rectangular" | "circular";
 export type MaterialType = "beton" | "stahlbeton" | "mauerwerk" | "kalksandstein" | "ziegel" | "naturstein";
-export type OrderStatus = "draft" | "planned" | "exported";
 
 export interface Order {
   id: string;
-  orderNumber: string;
-  customerName: string;
-  constructionSite: ConstructionSite;
+  name: string;
   positions: Position[];
   notes: string;
-  status: OrderStatus;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface ConstructionSite {
-  name: string;
-  street: string;
-  zipCode: string;
-  city: string;
-  contactPerson: string;
-  phone: string;
 }
 
 export interface Position {
@@ -41,11 +28,9 @@ export interface Dimensions {
   height?: number;
   wallThickness: number;
   diameter?: number;
-  length?: number;
-  depth?: number;
   bladeDiameter: number;
   bladeOverlap: number;
-  drillDiameter?: number;
+  maxSegmentWeight: number; // kg – max weight per individual piece
 }
 
 export interface CutLine {
@@ -76,15 +61,13 @@ export interface CalculationResult {
   segments: number;
   cutLines: CutLine[];
   boreHolePositions: BoreHolePosition[];
+  totalWeight: number;    // Gesamtgewicht in kg
+  segmentWeight: number;  // Gewicht pro Segment in kg
 }
 
 // Labels for UI display (German)
 export const POSITION_TYPE_LABELS: Record<PositionType, string> = {
   wanddurchbruch: "Wanddurchbruch",
-  deckendurchbruch: "Deckendurchbruch",
-  kernbohrung: "Kernbohrung",
-  fugenschnitt: "Fugenschnitt",
-  bodensaegen: "Bodensägen",
 };
 
 export const MATERIAL_LABELS: Record<MaterialType, string> = {
@@ -94,12 +77,6 @@ export const MATERIAL_LABELS: Record<MaterialType, string> = {
   kalksandstein: "Kalksandstein",
   ziegel: "Ziegel",
   naturstein: "Naturstein",
-};
-
-export const STATUS_LABELS: Record<OrderStatus, string> = {
-  draft: "Entwurf",
-  planned: "Geplant",
-  exported: "Exportiert",
 };
 
 export const SHAPE_LABELS: Record<OpeningShape, string> = {

@@ -25,17 +25,10 @@ interface DimensionFormProps {
   onLabelChange: (label: string) => void;
   notes: string;
   onNotesChange: (notes: string) => void;
-  onSubmit: () => void;
+  onSubmit?: () => void;
 }
 
-const isRectangularType = (type: PositionType) =>
-  type === "wanddurchbruch" || type === "deckendurchbruch";
-
-const isLinearType = (type: PositionType) =>
-  type === "fugenschnitt" || type === "bodensaegen";
-
 export function DimensionForm({
-  positionType,
   shape,
   onShapeChange,
   material,
@@ -78,11 +71,11 @@ export function DimensionForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit();
+    onSubmit?.();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={onSubmit ? handleSubmit : undefined} className="space-y-4">
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Grunddaten</CardTitle>
@@ -114,23 +107,21 @@ export function DimensionForm({
             </Select>
           </div>
 
-          {isRectangularType(positionType) && (
-            <div className="grid gap-2">
-              <Label>Form</Label>
-              <Select value={shape} onValueChange={(v) => onShapeChange(v as OpeningShape)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(SHAPE_LABELS).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div className="grid gap-2">
+            <Label>Form</Label>
+            <Select value={shape} onValueChange={(v) => onShapeChange(v as OpeningShape)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(SHAPE_LABELS).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
       </Card>
 
@@ -140,40 +131,49 @@ export function DimensionForm({
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Rectangular openings */}
-          {isRectangularType(positionType) && shape === "rectangular" && (
+          {shape === "rectangular" && (
             <div className="grid gap-4 sm:grid-cols-2">
               {numField("width", "Breite", "width", "z.B. 1000")}
               {numField("height", "Höhe", "height", "z.B. 2100")}
             </div>
           )}
 
-          {/* Circular openings (Durchbruch or Kernbohrung) */}
-          {((isRectangularType(positionType) && shape === "circular") ||
-            positionType === "kernbohrung") &&
+          {/* Circular openings */}
+          {shape === "circular" &&
             numField("diameter", "Durchmesser", "diameter", "z.B. 200")}
-
-          {/* Linear cuts */}
-          {isLinearType(positionType) && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {numField("length", "Länge", "length", "z.B. 5000")}
-              {numField("depth", "Schnitttiefe", "depth", "z.B. 200")}
-            </div>
-          )}
 
           {/* Common: wall thickness */}
           {numField("wallThickness", "Wandstärke / Materialstärke", "wallThickness", "z.B. 240")}
 
-          {/* Blade settings for saw types */}
-          {positionType !== "kernbohrung" && (
+          {/* Blade settings for rectangular cuts */}
+          {shape === "rectangular" && (
             <div className="grid gap-4 sm:grid-cols-2">
               {numField("bladeDiameter", "Blattdurchmesser", "bladeDiameter", "z.B. 600")}
               {numField("bladeOverlap", "Überlappung", "bladeOverlap", "z.B. 20")}
             </div>
           )}
 
-          {/* Drill diameter for core drilling */}
-          {positionType === "kernbohrung" &&
-            numField("drillDiameter", "Bohrkronen-Ø", "drillDiameter", "z.B. 200")}
+          {/* Max segment weight for rectangular openings */}
+          {shape === "rectangular" && (
+            <div className="grid gap-2">
+              <Label htmlFor="maxSegmentWeight">
+                Max. Stückgewicht <span className="text-muted-foreground text-xs">(kg)</span>
+              </Label>
+              <Input
+                id="maxSegmentWeight"
+                type="number"
+                value={dimensions.maxSegmentWeight}
+                onChange={(e) =>
+                  updateDim("maxSegmentWeight", e.target.value ? Number(e.target.value) : 150)
+                }
+                placeholder="z.B. 150"
+                min={1}
+              />
+              <p className="text-xs text-muted-foreground">
+                Stücke über diesem Gewicht werden automatisch segmentiert
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -191,9 +191,11 @@ export function DimensionForm({
         </CardContent>
       </Card>
 
-      <Button type="submit" className="w-full">
-        Berechnen
-      </Button>
+      {onSubmit && (
+        <Button type="submit" className="w-full">
+          Berechnen
+        </Button>
+      )}
     </form>
   );
 }

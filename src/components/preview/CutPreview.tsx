@@ -12,24 +12,35 @@ const PADDING = 40;
 const SVG_WIDTH = 400;
 const SVG_HEIGHT = 300;
 
-export function CutPreview({ calculation, dimensions, positionType, shape }: CutPreviewProps) {
-  const isCircular = shape === "circular" || positionType === "kernbohrung";
-  const isLinear = positionType === "fugenschnitt" || positionType === "bodensaegen";
+export function CutPreview({ calculation, dimensions, shape }: CutPreviewProps) {
+  const isCircular = shape === "circular";
 
   // Calculate scale to fit the SVG
   let drawWidth: number;
   let drawHeight: number;
 
   if (isCircular) {
-    const d = dimensions.diameter ?? 200;
+    const d = dimensions.diameter ?? 0;
     drawWidth = d;
     drawHeight = d;
-  } else if (isLinear) {
-    drawWidth = dimensions.length ?? 1000;
-    drawHeight = dimensions.depth ?? 200;
   } else {
-    drawWidth = dimensions.width ?? 1000;
-    drawHeight = dimensions.height ?? 1000;
+    drawWidth = dimensions.width ?? 0;
+    drawHeight = dimensions.height ?? 0;
+  }
+
+  if (drawWidth <= 0 || drawHeight <= 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Schnittvorschau</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center rounded-md border bg-muted/50 text-muted-foreground text-sm" style={{ minHeight: 200 }}>
+            Maße eingeben, um Vorschau anzuzeigen
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   const availW = SVG_WIDTH - 2 * PADDING;
@@ -67,14 +78,6 @@ export function CutPreview({ calculation, dimensions, positionType, shape }: Cut
               scale={scale}
               offsetX={offsetX}
               offsetY={offsetY}
-            />
-          ) : isLinear ? (
-            <LinearPreview
-              scaledW={scaledW}
-              offsetX={offsetX}
-              offsetY={offsetY}
-              scaledH={scaledH}
-              dimensions={dimensions}
             />
           ) : (
             <RectangularPreview
@@ -208,52 +211,6 @@ function CircularPreview({
       <text x={cx} y={cy - 5} textAnchor="middle" fontSize="11" fill="#666">
         Ø {diameter} mm
       </text>
-    </g>
-  );
-}
-
-function LinearPreview({
-  scaledW,
-  offsetX,
-  offsetY,
-  scaledH,
-  dimensions,
-}: {
-  scaledW: number;
-  offsetX: number;
-  offsetY: number;
-  scaledH: number;
-  dimensions: Dimensions;
-}) {
-  const y = offsetY + scaledH / 2;
-  return (
-    <g>
-      {/* Surface */}
-      <rect
-        x={offsetX}
-        y={offsetY}
-        width={scaledW}
-        height={scaledH}
-        fill="#f5f5f5"
-        stroke="#999"
-        strokeWidth="1"
-      />
-      {/* Cut line */}
-      <line
-        x1={offsetX}
-        y1={y}
-        x2={offsetX + scaledW}
-        y2={y}
-        stroke="#ef4444"
-        strokeWidth="2"
-      />
-      <DimensionLabel
-        x1={offsetX}
-        y1={offsetY + scaledH + 15}
-        x2={offsetX + scaledW}
-        y2={offsetY + scaledH + 15}
-        text={`${dimensions.length ?? 0} mm`}
-      />
     </g>
   );
 }

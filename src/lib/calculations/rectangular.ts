@@ -9,7 +9,8 @@ export function calculateRectangularOpening(
   wallThickness: number,
   material: MaterialType,
   bladeDiameter: number,
-  _bladeOverlap: number = 20
+  _bladeOverlap: number = 20,
+  maxSegmentWeight: number = MAX_SEGMENT_WEIGHT
 ): CalculationResult {
   const suggestedBladeSize = suggestBladeDiameter(wallThickness);
   const effectiveBlade = Math.max(bladeDiameter, suggestedBladeSize);
@@ -19,12 +20,12 @@ export function calculateRectangularOpening(
   let horizontalCuts = 2;
   let verticalCuts = 2;
 
-  // Check if segmentation is needed
+  // Check if segmentation is needed based on maxSegmentWeight
   const totalWeight = calculateSegmentWeight(widthMm, heightMm, wallThickness, material);
   let segments = 1;
 
-  if (totalWeight > MAX_SEGMENT_WEIGHT) {
-    segments = Math.ceil(totalWeight / MAX_SEGMENT_WEIGHT);
+  if (totalWeight > maxSegmentWeight) {
+    segments = Math.ceil(totalWeight / maxSegmentWeight);
     // Add intermediate horizontal cuts for segmentation
     horizontalCuts += segments - 1;
   }
@@ -101,5 +102,7 @@ export function calculateRectangularOpening(
     segments,
     cutLines,
     boreHolePositions,
+    totalWeight: Math.round(totalWeight * 10) / 10,
+    segmentWeight: Math.round((totalWeight / segments) * 10) / 10,
   };
 }
