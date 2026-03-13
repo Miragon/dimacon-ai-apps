@@ -33,6 +33,7 @@ export function PositionPage() {
   const [editedCalc, setEditedCalc] = useState<CalculationResult | null>(
     existingPosition?.calculation ?? null
   );
+  const [hasManualEdits, setHasManualEdits] = useState(false);
 
   if (!order || (isEditMode && !existingPosition)) {
     return (
@@ -76,6 +77,7 @@ export function PositionPage() {
       shape
     );
     setEditedCalc(recalculated);
+    setHasManualEdits(true);
   };
 
   const handleToggleSide = (side: keyof DisabledSides) => {
@@ -84,10 +86,25 @@ export function PositionPage() {
       ds[side] = !ds[side];
       return { ...prev, disabledSides: ds };
     });
+    setEditedCalc(null);
+    setHasManualEdits(false);
+  };
+
+  const handleDimensionsChange = (dims: Dimensions) => {
+    setDimensions(dims);
+    setEditedCalc(null);
+    setHasManualEdits(false);
+  };
+
+  const handleMaterialChange = (mat: MaterialType) => {
+    setMaterial(mat);
+    setEditedCalc(null);
+    setHasManualEdits(false);
   };
 
   const handleResetCalc = () => {
     setEditedCalc(null);
+    setHasManualEdits(false);
   };
 
   const handleSave = () => {
@@ -139,7 +156,7 @@ export function PositionPage() {
             {isEditMode ? `Position #${existingPosition!.sortOrder + 1}` : "Maße & Berechnung"}
           </p>
         </div>
-        {editedCalc && (
+        {hasManualEdits && (
           <Button variant="outline" onClick={handleResetCalc}>
             <RotateCcw className="mr-2 h-4 w-4" />
             Zurücksetzen
@@ -159,9 +176,9 @@ export function PositionPage() {
       <DimensionForm
         positionType={positionType}
         material={material}
-        onMaterialChange={setMaterial}
+        onMaterialChange={handleMaterialChange}
         dimensions={dimensions}
-        onDimensionsChange={setDimensions}
+        onDimensionsChange={handleDimensionsChange}
         label={label}
         onLabelChange={setLabel}
         notes={notes}

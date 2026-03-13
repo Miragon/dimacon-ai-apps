@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ChevronDown } from "lucide-react";
+import { useState } from "react";
 
 interface DimensionFormProps {
   positionType: PositionType;
@@ -66,13 +68,27 @@ export function DimensionForm({
     onSubmit?.();
   };
 
+  const [open, setOpen] = useState(true);
+
   return (
     <form onSubmit={onSubmit ? handleSubmit : undefined} className="space-y-4">
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Grunddaten & Maße</CardTitle>
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            className="flex w-full items-center gap-2 text-left"
+          >
+            <CardTitle className="text-base">Grunddaten & Maße</CardTitle>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+                open && "rotate-180"
+              )}
+            />
+          </button>
         </CardHeader>
-        <CardContent className="space-y-4">
+        {open && <CardContent className="space-y-4">
           {/* Bezeichnung */}
           <div className="grid gap-1.5">
             <Label htmlFor="label">Bezeichnung</Label>
@@ -166,7 +182,7 @@ export function DimensionForm({
               />
             </div>
           </div>
-        </CardContent>
+        </CardContent>}
       </Card>
 
       {onSubmit && (
