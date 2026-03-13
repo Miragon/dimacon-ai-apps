@@ -533,11 +533,6 @@ function CircularPreview({
   );
 }
 
-/** Estimate pixel width of a label string at fontSize 10 (~6px per char) */
-function estimateLabelWidth(text: string): number {
-  return text.length * 6;
-}
-
 /**
  * Compute stagger levels for a list of segment pixel widths.
  * Returns per-segment { level, abbreviate } so labels can be spread across rows.
