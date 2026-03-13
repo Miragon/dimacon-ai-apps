@@ -3,9 +3,8 @@ import { PositionCard } from "./PositionCard";
 
 interface PositionListProps {
   positions: Position[];
-  orderId: string;
-  onDelete: (positionId: string) => void;
-  onSelect: (positionId: string) => void;
+  onDelete: (index: number) => void;
+  onSelect: (index: number) => void;
 }
 
 export function PositionList({ positions, onDelete, onSelect }: PositionListProps) {
@@ -24,12 +23,12 @@ export function PositionList({ positions, onDelete, onSelect }: PositionListProp
     <div className="space-y-3">
       {positions
         .sort((a, b) => a.sortOrder - b.sortOrder)
-        .map((position) => (
+        .map((position, index) => (
           <PositionCard
-            key={position.id}
+            key={index}
             position={position}
-            onDelete={() => onDelete(position.id)}
-            onClick={() => onSelect(position.id)}
+            onDelete={() => onDelete(index)}
+            onClick={() => onSelect(index)}
           />
         ))}
     </div>

@@ -1,5 +1,4 @@
-import { useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Plus, FileText } from "lucide-react";
+import { LayoutDashboard, Plus, Copy } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -12,14 +11,22 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { useOrders } from "@/hooks/use-orders";
+import { TEMPLATES } from "@/lib/templates";
+import { MATERIAL_LABELS } from "@/types";
 
-export function AppSidebar() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const orders = useOrders();
+interface AppSidebarProps {
+  onNavigateHome: () => void;
+  onAddFromTemplate: (templateIndex: number) => void;
+  onAddEmpty: () => void;
+  isEditing: boolean;
+}
 
+export function AppSidebar({
+  onNavigateHome,
+  onAddFromTemplate,
+  onAddEmpty,
+  isEditing,
+}: AppSidebarProps) {
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
@@ -39,12 +46,15 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => navigate("/")}
-                  isActive={location.pathname === "/"}
-                >
+                <SidebarMenuButton onClick={onNavigateHome} isActive={!isEditing}>
                   <LayoutDashboard className="h-4 w-4" />
-                  <span>Dashboard</span>
+                  <span>Übersicht</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={onAddEmpty}>
+                  <Plus className="h-4 w-4" />
+                  <span>Neue Position</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -52,44 +62,29 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="flex items-center justify-between">
-            <span>Aufträge</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5"
-              onClick={() => navigate("/?new=true")}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          </SidebarGroupLabel>
+          <SidebarGroupLabel>Vorlagen</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {orders.map((order) => (
-                <SidebarMenuItem key={order.id}>
-                  <SidebarMenuButton
-                    onClick={() => navigate(`/orders/${order.id}`)}
-                    isActive={location.pathname.startsWith(`/orders/${order.id}`)}
-                  >
-                    <FileText className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{order.name}</span>
+              {TEMPLATES.map((tpl, i) => (
+                <SidebarMenuItem key={i}>
+                  <SidebarMenuButton onClick={() => onAddFromTemplate(i)}>
+                    <Copy className="h-4 w-4 shrink-0" />
+                    <div className="flex flex-col items-start min-w-0">
+                      <span className="truncate text-sm">{tpl.label}</span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {MATERIAL_LABELS[tpl.material]}
+                      </span>
+                    </div>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-              {orders.length === 0 && (
-                <p className="px-4 py-2 text-xs text-muted-foreground">
-                  Noch keine Aufträge
-                </p>
-              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="p-4">
-        <p className="text-xs text-muted-foreground">
-          Dimacon Kalkulator v0.1
-        </p>
+        <p className="text-xs text-muted-foreground">Dimacon Kalkulator v0.1</p>
       </SidebarFooter>
     </Sidebar>
   );

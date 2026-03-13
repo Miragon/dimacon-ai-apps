@@ -1,6 +1,6 @@
 import { useState } from "react";
-import type { Order } from "@/types";
-import { exportOrderAsJson } from "@/lib/export/dimacon-mapper";
+import type { Position } from "@/types";
+import { exportAsJson } from "@/lib/export/dimacon-mapper";
 import {
   Dialog,
   DialogContent,
@@ -15,14 +15,15 @@ import { POSITION_TYPE_LABELS } from "@/types";
 import { Download, Copy, Check } from "lucide-react";
 
 interface ExportDialogProps {
-  order: Order;
+  name: string;
+  positions: Position[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function ExportDialog({ order, open, onOpenChange }: ExportDialogProps) {
+export function ExportDialog({ name, positions, open, onOpenChange }: ExportDialogProps) {
   const [copied, setCopied] = useState(false);
-  const json = exportOrderAsJson(order);
+  const json = exportAsJson(positions, name);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(json);
@@ -35,16 +36,16 @@ export function ExportDialog({ order, open, onOpenChange }: ExportDialogProps) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${order.name || "auftrag"}-export.json`;
+    a.download = `${name || "auftrag"}-export.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  const totalLm = order.positions.reduce(
+  const totalLm = positions.reduce(
     (sum, p) => sum + (p.calculation?.totalLinearMeters ?? 0),
     0
   );
-  const totalMinutes = order.positions.reduce(
+  const totalMinutes = positions.reduce(
     (sum, p) => sum + (p.calculation?.estimatedMinutes ?? 0),
     0
   );
@@ -53,7 +54,7 @@ export function ExportDialog({ order, open, onOpenChange }: ExportDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Export: {order.name}</DialogTitle>
+          <DialogTitle>Export: {name || "Auftrag"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -62,7 +63,7 @@ export function ExportDialog({ order, open, onOpenChange }: ExportDialogProps) {
             <div className="grid grid-cols-3 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground">Positionen</p>
-                <p className="font-medium">{order.positions.length}</p>
+                <p className="font-medium">{positions.length}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Laufmeter</p>
@@ -74,8 +75,8 @@ export function ExportDialog({ order, open, onOpenChange }: ExportDialogProps) {
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              {order.positions.map((p) => (
-                <Badge key={p.id} variant="outline" className="text-xs">
+              {positions.map((p, i) => (
+                <Badge key={i} variant="outline" className="text-xs">
                   {p.label} ({POSITION_TYPE_LABELS[p.type]})
                 </Badge>
               ))}

@@ -2,15 +2,6 @@ export type PositionType = "wanddurchbruch";
 export type OpeningShape = "rectangular" | "circular";
 export type MaterialType = "beton" | "stahlbeton" | "mauerwerk" | "kalksandstein" | "ziegel" | "naturstein";
 
-export interface Order {
-  id: string;
-  name: string;
-  positions: Position[];
-  notes: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface Position {
   id: string;
   type: PositionType;

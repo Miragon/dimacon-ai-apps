@@ -1,4 +1,4 @@
-import type { Order, Position } from "@/types";
+import type { Position } from "@/types";
 
 export interface NewWorkingTO {
   name: string;
@@ -58,14 +58,14 @@ function mapPosition(position: Position): WorkingPositionTO {
   };
 }
 
-export function mapOrderToWorkingTO(order: Order): NewWorkingTO {
+export function mapToWorkingTO(positions: Position[], name: string, notes = ""): NewWorkingTO {
   return {
-    name: order.name,
-    positions: order.positions.map(mapPosition),
-    notes: order.notes,
+    name,
+    positions: positions.map(mapPosition),
+    notes,
   };
 }
 
-export function exportOrderAsJson(order: Order): string {
-  return JSON.stringify(mapOrderToWorkingTO(order), null, 2);
+export function exportAsJson(positions: Position[], name: string, notes = ""): string {
+  return JSON.stringify(mapToWorkingTO(positions, name, notes), null, 2);
 }
