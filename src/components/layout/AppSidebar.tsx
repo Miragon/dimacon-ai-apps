@@ -64,15 +64,18 @@ export function AppSidebar({
         <SidebarGroup>
           <SidebarGroupLabel>Vorlagen</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-1">
               {TEMPLATES.map((tpl, i) => (
                 <SidebarMenuItem key={i}>
-                  <SidebarMenuButton onClick={() => onAddFromTemplate(i)}>
-                    <Copy className="h-4 w-4 shrink-0" />
+                  <SidebarMenuButton
+                    onClick={() => onAddFromTemplate(i)}
+                    className="h-auto py-1.5"
+                  >
+                    <Copy className="h-3.5 w-3.5 shrink-0" />
                     <div className="flex flex-col items-start min-w-0">
                       <span className="truncate text-sm">{tpl.label}</span>
-                      <span className="truncate text-xs text-muted-foreground">
-                        {MATERIAL_LABELS[tpl.material]}
+                      <span className="truncate text-[11px] leading-tight text-muted-foreground">
+                        {MATERIAL_LABELS[tpl.material]} · {tpl.dimensions.width}×{tpl.dimensions.height}
                       </span>
                     </div>
                   </SidebarMenuButton>
