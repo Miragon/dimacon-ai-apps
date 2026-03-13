@@ -12,7 +12,7 @@ interface CutPreviewProps {
   onToggleSide?: (side: SideKey) => void;
 }
 
-const PADDING = 40;
+const PADDING = 60;
 const SVG_WIDTH = 400;
 const SVG_HEIGHT = 300;
 
@@ -144,6 +144,32 @@ function RectangularPreview({
   dimensions: Dimensions;
   scale: number;
 }) {
+  // Compute segment distances from division cuts
+  const frontCutLines = calculation.cutLines.filter((cl) => cl.side === "front");
+  const width = dimensions.width ?? 0;
+  const height = dimensions.height ?? 0;
+
+  // Vertical cut lines (same x1 and x2) → split width into horizontal segments
+  const verticalXSet = new Set<number>([0, width]);
+  for (const cl of frontCutLines) {
+    if (Math.abs(cl.x1 - cl.x2) < 0.01) {
+      verticalXSet.add(Math.round(cl.x1));
+    }
+  }
+  const sortedX = Array.from(verticalXSet).sort((a, b) => a - b);
+
+  // Horizontal cut lines (same y1 and y2) → split height into vertical segments
+  const horizontalYSet = new Set<number>([0, height]);
+  for (const cl of frontCutLines) {
+    if (Math.abs(cl.y1 - cl.y2) < 0.01) {
+      horizontalYSet.add(Math.round(cl.y1));
+    }
+  }
+  const sortedY = Array.from(horizontalYSet).sort((a, b) => a - b);
+
+  const hasHSegments = sortedX.length > 2;
+  const hasVSegments = sortedY.length > 2;
+
   return (
     <g>
       {/* Wall/surface fill */}
@@ -158,21 +184,19 @@ function RectangularPreview({
       />
 
       {/* Cut lines */}
-      {calculation.cutLines
-        .filter((cl) => cl.side === "front")
-        .map((line, i) => (
-          <line
-            key={i}
-            x1={offsetX + line.x1 * scale}
-            y1={offsetY + line.y1 * scale}
-            x2={offsetX + line.x2 * scale}
-            y2={offsetY + line.y2 * scale}
-            stroke={line.disabled ? "#ccc" : "#ef4444"}
-            strokeWidth={line.disabled ? 1 : 2}
-            strokeDasharray={line.disabled ? "4,4" : line.label.startsWith("Teilung") ? "6,3" : "none"}
-            opacity={line.disabled ? 0.5 : 1}
-          />
-        ))}
+      {frontCutLines.map((line, i) => (
+        <line
+          key={i}
+          x1={offsetX + line.x1 * scale}
+          y1={offsetY + line.y1 * scale}
+          x2={offsetX + line.x2 * scale}
+          y2={offsetY + line.y2 * scale}
+          stroke={line.disabled ? "#ccc" : "#ef4444"}
+          strokeWidth={line.disabled ? 1 : 2}
+          strokeDasharray={line.disabled ? "4,4" : line.label.startsWith("Teilung") ? "6,3" : "none"}
+          opacity={line.disabled ? 0.5 : 1}
+        />
+      ))}
 
       {/* Bore holes */}
       {calculation.boreHolePositions.map((bh, i) => (
@@ -187,22 +211,55 @@ function RectangularPreview({
         />
       ))}
 
-      {/* Dimension labels */}
+      {/* Overall dimension labels */}
       <DimensionLabel
         x1={offsetX}
         y1={offsetY + scaledH + 15}
         x2={offsetX + scaledW}
         y2={offsetY + scaledH + 15}
-        text={`${dimensions.width ?? 0} mm`}
+        text={`${width} mm`}
       />
       <DimensionLabel
         x1={offsetX + scaledW + 15}
         y1={offsetY}
         x2={offsetX + scaledW + 15}
         y2={offsetY + scaledH}
-        text={`${dimensions.height ?? 0} mm`}
+        text={`${height} mm`}
         vertical
       />
+
+      {/* Horizontal segment distances (top) */}
+      {hasHSegments &&
+        sortedX.slice(0, -1).map((x, i) => {
+          const nextX = sortedX[i + 1];
+          return (
+            <DimensionLabel
+              key={`hseg-${i}`}
+              x1={offsetX + x * scale}
+              y1={offsetY - 15}
+              x2={offsetX + nextX * scale}
+              y2={offsetY - 15}
+              text={`${nextX - x} mm`}
+            />
+          );
+        })}
+
+      {/* Vertical segment distances (left) */}
+      {hasVSegments &&
+        sortedY.slice(0, -1).map((y, i) => {
+          const nextY = sortedY[i + 1];
+          return (
+            <DimensionLabel
+              key={`vseg-${i}`}
+              x1={offsetX - 15}
+              y1={offsetY + y * scale}
+              x2={offsetX - 15}
+              y2={offsetY + nextY * scale}
+              text={`${nextY - y} mm`}
+              vertical
+            />
+          );
+        })}
     </g>
   );
 }
