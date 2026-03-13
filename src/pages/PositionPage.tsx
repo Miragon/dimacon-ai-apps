@@ -30,7 +30,9 @@ export function PositionPage() {
     }
   );
   const [notes, setNotes] = useState(existingPosition?.notes ?? "");
-  const [editedCalc, setEditedCalc] = useState<CalculationResult | null>(null);
+  const [editedCalc, setEditedCalc] = useState<CalculationResult | null>(
+    existingPosition?.calculation ?? null
+  );
 
   if (!order || (isEditMode && !existingPosition)) {
     return (
@@ -82,7 +84,6 @@ export function PositionPage() {
       ds[side] = !ds[side];
       return { ...prev, disabledSides: ds };
     });
-    setEditedCalc(null);
   };
 
   const handleResetCalc = () => {
@@ -101,7 +102,6 @@ export function PositionPage() {
         notes,
         calculation,
       });
-      setEditedCalc(null);
     } else {
       const position: Position = {
         id: crypto.randomUUID(),
@@ -159,15 +159,9 @@ export function PositionPage() {
       <DimensionForm
         positionType={positionType}
         material={material}
-        onMaterialChange={(m) => {
-          setMaterial(m);
-          setEditedCalc(null);
-        }}
+        onMaterialChange={setMaterial}
         dimensions={dimensions}
-        onDimensionsChange={(d) => {
-          setDimensions(d);
-          setEditedCalc(null);
-        }}
+        onDimensionsChange={setDimensions}
         label={label}
         onLabelChange={setLabel}
         notes={notes}

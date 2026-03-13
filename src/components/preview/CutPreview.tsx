@@ -12,9 +12,9 @@ interface CutPreviewProps {
   onToggleSide?: (side: SideKey) => void;
 }
 
-const PADDING = 60;
-const SVG_WIDTH = 400;
-const SVG_HEIGHT = 300;
+const PADDING = 80;
+const SVG_WIDTH = 500;
+const SVG_HEIGHT = 400;
 
 export function CutPreview({ calculation, dimensions, shape, disabledSides, onToggleSide }: CutPreviewProps) {
   const isCircular = shape === "circular";
@@ -88,7 +88,7 @@ export function CutPreview({ calculation, dimensions, shape, disabledSides, onTo
             <svg
               viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
               className="flex-1 rounded-md border bg-white"
-              style={{ maxHeight: 300 }}
+              style={{ maxHeight: 400 }}
             >
               {/* Background grid */}
               <defs>
