@@ -82,15 +82,22 @@ export function PositionPage() {
   };
 
   const handleToggleSide = (side: keyof DisabledSides) => {
-    setDimensions((prev) => {
-      const ds = { ...prev.disabledSides };
-      ds[side] = !ds[side];
-      return { ...prev, disabledSides: ds };
-    });
-    // Seitenschnitte wirken sofort
-    setDisplayedCalc(null);
-    setNeedsRecalc(false);
-    setHasManualEdits(false);
+    const newDs = { ...dimensions.disabledSides };
+    newDs[side] = !newDs[side];
+    setDimensions((prev) => ({ ...prev, disabledSides: newDs }));
+
+    // Nur abgeleitete Werte neu berechnen, horizontalCuts/verticalCuts bleiben gleich
+    const recalculated = recalculateFromEdit(
+      calculation,
+      "horizontalCuts",
+      calculation.horizontalCuts,
+      { ...dimensions, disabledSides: newDs },
+      material,
+      positionType,
+      shape
+    );
+    setDisplayedCalc(recalculated);
+    // needsRecalc und hasManualEdits bleiben unverändert
   };
 
   const handleDimensionsChange = (dims: Dimensions) => {

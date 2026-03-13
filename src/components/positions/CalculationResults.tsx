@@ -26,19 +26,25 @@ export function CalculationResults({
   editable = false,
   onFieldChange,
 }: CalculationResultsProps) {
+  // Deaktivierte Seiten: Anzeige zeigt aktive Schnitte, intern bleiben Strukturwerte
+  const disabledH = (dimensions?.disabledSides?.top ? 1 : 0) + (dimensions?.disabledSides?.bottom ? 1 : 0);
+  const disabledV = (dimensions?.disabledSides?.left ? 1 : 0) + (dimensions?.disabledSides?.right ? 1 : 0);
+
   const editableField = (
     field: keyof CalculationResult,
     value: number,
-    label: string
+    label: string,
+    offset = 0, // Offset für disabled sides: Anzeige = value - offset, Edit = input + offset
   ) => {
+    const displayValue = value - offset;
     if (!editable) {
-      return <span>{value}</span>;
+      return <span>{displayValue}</span>;
     }
     return (
       <Input
         type="number"
-        value={value}
-        onChange={(e) => onFieldChange?.(field, Number(e.target.value))}
+        value={displayValue}
+        onChange={(e) => onFieldChange?.(field, Number(e.target.value) + offset)}
         className="h-7 w-20 text-right"
         min={0}
         aria-label={label}
@@ -113,11 +119,11 @@ export function CalculationResults({
         <div className="space-y-2 text-sm">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Horizontale Schnitte</span>
-            {editableField("horizontalCuts", calculation.horizontalCuts, "Horizontale Schnitte")}
+            {editableField("horizontalCuts", calculation.horizontalCuts, "Horizontale Schnitte", disabledH)}
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Vertikale Schnitte</span>
-            {editableField("verticalCuts", calculation.verticalCuts, "Vertikale Schnitte")}
+            {editableField("verticalCuts", calculation.verticalCuts, "Vertikale Schnitte", disabledV)}
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Eckbohrungen</span>
