@@ -40,7 +40,7 @@ export function DimensionForm({
   const numField = (
     id: string,
     labelText: string,
-    key: keyof Dimensions,
+    key: Exclude<keyof Dimensions, "disabledSides">,
     placeholder: string,
     unit: string = "mm"
   ) => (

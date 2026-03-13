@@ -1,18 +1,22 @@
-import type { CalculationResult, Dimensions, PositionType, OpeningShape } from "@/types";
+import type { CalculationResult, Dimensions, PositionType, OpeningShape, DisabledSides } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+type SideKey = keyof DisabledSides;
 
 interface CutPreviewProps {
   calculation: CalculationResult;
   dimensions: Dimensions;
   positionType: PositionType;
   shape: OpeningShape;
+  disabledSides?: DisabledSides;
+  onToggleSide?: (side: SideKey) => void;
 }
 
 const PADDING = 40;
 const SVG_WIDTH = 400;
 const SVG_HEIGHT = 300;
 
-export function CutPreview({ calculation, dimensions, shape }: CutPreviewProps) {
+export function CutPreview({ calculation, dimensions, shape, disabledSides, onToggleSide }: CutPreviewProps) {
   const isCircular = shape === "circular";
 
   // Calculate scale to fit the SVG
@@ -52,45 +56,72 @@ export function CutPreview({ calculation, dimensions, shape }: CutPreviewProps) 
   const offsetX = (SVG_WIDTH - scaledW) / 2;
   const offsetY = (SVG_HEIGHT - scaledH) / 2;
 
+  const showToggles = !isCircular && !!onToggleSide;
+
+  const toggleButton = (side: SideKey, label: string, className: string) => {
+    const isDisabled = !!disabledSides?.[side];
+    return (
+      <button
+        type="button"
+        onClick={() => onToggleSide!(side)}
+        className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+          isDisabled
+            ? "bg-muted text-muted-foreground border-dashed line-through"
+            : "bg-background text-foreground border-border hover:bg-accent"
+        } ${className}`}
+      >
+        {label}
+      </button>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Schnittvorschau</CardTitle>
       </CardHeader>
       <CardContent>
-        <svg
-          viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
-          className="w-full rounded-md border bg-white"
-          style={{ maxHeight: 300 }}
-        >
-          {/* Background grid */}
-          <defs>
-            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f0f0f0" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width={SVG_WIDTH} height={SVG_HEIGHT} fill="url(#grid)" />
+        <div className="flex flex-col items-center gap-1">
+          {showToggles && toggleButton("top", "Oben", "")}
+          <div className="flex items-center gap-1 w-full">
+            {showToggles && toggleButton("left", "Links", "")}
+            <svg
+              viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
+              className="flex-1 rounded-md border bg-white"
+              style={{ maxHeight: 300 }}
+            >
+              {/* Background grid */}
+              <defs>
+                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f0f0f0" strokeWidth="0.5" />
+                </pattern>
+              </defs>
+              <rect width={SVG_WIDTH} height={SVG_HEIGHT} fill="url(#grid)" />
 
-          {isCircular ? (
-            <CircularPreview
-              calculation={calculation}
-              diameter={drawWidth}
-              scale={scale}
-              offsetX={offsetX}
-              offsetY={offsetY}
-            />
-          ) : (
-            <RectangularPreview
-              calculation={calculation}
-              scaledW={scaledW}
-              scaledH={scaledH}
-              offsetX={offsetX}
-              offsetY={offsetY}
-              dimensions={dimensions}
-              scale={scale}
-            />
-          )}
-        </svg>
+              {isCircular ? (
+                <CircularPreview
+                  calculation={calculation}
+                  diameter={drawWidth}
+                  scale={scale}
+                  offsetX={offsetX}
+                  offsetY={offsetY}
+                />
+              ) : (
+                <RectangularPreview
+                  calculation={calculation}
+                  scaledW={scaledW}
+                  scaledH={scaledH}
+                  offsetX={offsetX}
+                  offsetY={offsetY}
+                  dimensions={dimensions}
+                  scale={scale}
+                />
+              )}
+            </svg>
+            {showToggles && toggleButton("right", "Rechts", "")}
+          </div>
+          {showToggles && toggleButton("bottom", "Unten", "")}
+        </div>
       </CardContent>
     </Card>
   );
@@ -136,9 +167,10 @@ function RectangularPreview({
             y1={offsetY + line.y1 * scale}
             x2={offsetX + line.x2 * scale}
             y2={offsetY + line.y2 * scale}
-            stroke="#ef4444"
-            strokeWidth="2"
-            strokeDasharray={line.label.startsWith("Teilung") ? "6,3" : "none"}
+            stroke={line.disabled ? "#ccc" : "#ef4444"}
+            strokeWidth={line.disabled ? 1 : 2}
+            strokeDasharray={line.disabled ? "4,4" : line.label.startsWith("Teilung") ? "6,3" : "none"}
+            opacity={line.disabled ? 0.5 : 1}
           />
         ))}
 

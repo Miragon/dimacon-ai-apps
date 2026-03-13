@@ -18,7 +18,8 @@ export function calculatePosition(position: Position): CalculationResult {
     dimensions.wallThickness,
     material,
     dimensions.bladeDiameter,
-    dimensions.maxSegmentWeight
+    dimensions.maxSegmentWeight,
+    dimensions.disabledSides
   );
 }
 

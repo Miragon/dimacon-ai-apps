@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Scissors, Ruler, Clock, Circle, Layers, ArrowLeftRight, Weight, Square } from "lucide-react";
+import { Scissors, Ruler, Clock, Circle, Layers, ArrowLeftRight, Weight, Square, EyeOff } from "lucide-react";
 
 interface CalculationResultsProps {
   calculation: CalculationResult;
@@ -147,6 +147,34 @@ export function CalculationResults({
               <Layers className="mr-1 h-3 w-3" />
               {calculation.segments} Segmente
             </Badge>
+          )}
+          {dimensions?.disabledSides && (
+            <>
+              {dimensions.disabledSides.top && (
+                <Badge variant="outline" className="text-xs">
+                  <EyeOff className="mr-1 h-3 w-3" />
+                  Oben deaktiviert
+                </Badge>
+              )}
+              {dimensions.disabledSides.bottom && (
+                <Badge variant="outline" className="text-xs">
+                  <EyeOff className="mr-1 h-3 w-3" />
+                  Unten deaktiviert
+                </Badge>
+              )}
+              {dimensions.disabledSides.left && (
+                <Badge variant="outline" className="text-xs">
+                  <EyeOff className="mr-1 h-3 w-3" />
+                  Links deaktiviert
+                </Badge>
+              )}
+              {dimensions.disabledSides.right && (
+                <Badge variant="outline" className="text-xs">
+                  <EyeOff className="mr-1 h-3 w-3" />
+                  Rechts deaktiviert
+                </Badge>
+              )}
+            </>
           )}
         </div>
 

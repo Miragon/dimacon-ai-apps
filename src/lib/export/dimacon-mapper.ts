@@ -16,6 +16,7 @@ export interface WorkingPositionTO {
     wallThickness: number;
     diameter?: number;
     maxSegmentWeight: number;
+    disabledSides?: { top?: boolean; bottom?: boolean; left?: boolean; right?: boolean };
   };
   calculation: {
     totalCuts: number;
@@ -40,6 +41,7 @@ function mapPosition(position: Position): WorkingPositionTO {
       wallThickness: position.dimensions.wallThickness,
       diameter: position.dimensions.diameter,
       maxSegmentWeight: position.dimensions.maxSegmentWeight ?? 150,
+      disabledSides: position.dimensions.disabledSides,
     },
     calculation: position.calculation
       ? {

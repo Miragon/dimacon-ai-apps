@@ -23,10 +23,18 @@ export function recalculateFromEdit(
   if (shape === "rectangular") {
     const w = dimensions.width ?? 0;
     const h = dimensions.height ?? 0;
+    const ds = dimensions.disabledSides;
+    const disabledH = (ds?.top ? 1 : 0) + (ds?.bottom ? 1 : 0);
+    const disabledV = (ds?.left ? 1 : 0) + (ds?.right ? 1 : 0);
+
     const hLm = (updated.horizontalCuts * w) / 1000;
     const vLm = (updated.verticalCuts * h) / 1000;
+    const disabledHLm = disabledH * w / 1000;
+    const disabledVLm = disabledV * h / 1000;
     const sideFactor = updated.cutFromBothSides ? 2 : 1;
-    updated.totalLinearMeters = Math.round((hLm + vLm) * sideFactor * 100) / 100;
+    updated.totalLinearMeters = Math.round((hLm + vLm - disabledHLm - disabledVLm) * sideFactor * 100) / 100;
+
+    updated.totalCuts = updated.horizontalCuts + updated.verticalCuts - disabledH - disabledV;
 
     // Segments = rows × columns (horizontal and vertical both contribute)
     updated.segments = Math.max(1, (updated.horizontalCuts - 1) * (updated.verticalCuts - 1));
@@ -36,25 +44,24 @@ export function recalculateFromEdit(
       ? Math.round((updated.totalWeight / updated.segments) * 10) / 10
       : 0;
 
-    // Auto-update bore holes when cut counts change (only edge intersections)
-    if (field === "horizontalCuts" || field === "verticalCuts") {
-      const rows = updated.horizontalCuts - 1;
-      const cols = updated.verticalCuts - 1;
-      updated.cornerBoreHoles = (rows + 1) * (cols + 1) - Math.max(0, rows - 1) * Math.max(0, cols - 1);
-    }
-
     // Schnittfläche neu berechnen
+    const activeCutLength = (updated.horizontalCuts - disabledH) * w + (updated.verticalCuts - disabledV) * h;
     updated.cutSurfaceArea = Math.round(
-      (updated.horizontalCuts * w + updated.verticalCuts * h) * dimensions.wallThickness / 1_000_000 * 100
+      activeCutLength * dimensions.wallThickness / 1_000_000 * 100
     ) / 100;
+
+    // Regenerate cut lines and bore hole positions for SVG
+    updated.cutLines = generateCutLines(w, h, updated.horizontalCuts, updated.verticalCuts, updated.cutFromBothSides, ds);
+    updated.boreHolePositions = generateBoreHolePositions(w, h, updated.horizontalCuts, updated.verticalCuts, ds);
+
+    // Auto-update bore holes from generated positions
+    if (field === "horizontalCuts" || field === "verticalCuts") {
+      updated.cornerBoreHoles = updated.boreHolePositions.length;
+    }
 
     updated.estimatedMinutes =
       estimateWallSawTime(updated.totalLinearMeters, material) +
       updated.cornerBoreHoles * 5;
-
-    // Regenerate cut lines and bore hole positions for SVG
-    updated.cutLines = generateCutLines(w, h, updated.horizontalCuts, updated.verticalCuts, updated.cutFromBothSides);
-    updated.boreHolePositions = generateBoreHolePositions(w, h, updated.horizontalCuts, updated.verticalCuts);
   } else if (shape === "circular") {
     updated.estimatedMinutes = estimateCoreDrillTime(updated.totalLinearMeters, material);
   }

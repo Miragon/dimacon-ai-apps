@@ -23,6 +23,13 @@ export interface Position {
   sortOrder: number;
 }
 
+export interface DisabledSides {
+  top?: boolean;
+  bottom?: boolean;
+  left?: boolean;
+  right?: boolean;
+}
+
 export interface Dimensions {
   width?: number;
   height?: number;
@@ -30,6 +37,7 @@ export interface Dimensions {
   diameter?: number;
   bladeDiameter: number;
   maxSegmentWeight?: number; // kg – max weight per individual piece, defaults to 150
+  disabledSides?: DisabledSides;
 }
 
 export interface CutLine {
@@ -39,6 +47,7 @@ export interface CutLine {
   y2: number;
   label: string;
   side: "front" | "back";
+  disabled?: boolean;
 }
 
 export interface BoreHolePosition {

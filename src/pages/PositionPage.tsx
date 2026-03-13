@@ -6,7 +6,7 @@ import { useOrder, useOrderActions } from "@/hooks/use-orders";
 import { DimensionForm } from "@/components/positions/DimensionForm";
 import { CalculationResults } from "@/components/positions/CalculationResults";
 import { CutPreview } from "@/components/preview/CutPreview";
-import type { MaterialType, Dimensions, Position, CalculationResult } from "@/types";
+import type { MaterialType, Dimensions, Position, CalculationResult, DisabledSides } from "@/types";
 import { calculatePosition } from "@/lib/calculations";
 import { recalculateFromEdit } from "@/lib/calculations/recalculate";
 
@@ -74,6 +74,15 @@ export function PositionPage() {
       shape
     );
     setEditedCalc(recalculated);
+  };
+
+  const handleToggleSide = (side: keyof DisabledSides) => {
+    setDimensions((prev) => {
+      const ds = { ...prev.disabledSides };
+      ds[side] = !ds[side];
+      return { ...prev, disabledSides: ds };
+    });
+    setEditedCalc(null);
   };
 
   const handleResetCalc = () => {
@@ -180,6 +189,8 @@ export function PositionPage() {
           dimensions={dimensions}
           positionType={positionType}
           shape={shape}
+          disabledSides={dimensions.disabledSides}
+          onToggleSide={handleToggleSide}
         />
       </div>
     </div>
