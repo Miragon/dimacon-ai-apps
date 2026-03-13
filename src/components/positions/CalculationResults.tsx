@@ -130,10 +130,6 @@ export function CalculationResults({
             </div>
           )}
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Empfohlenes Blatt</span>
-            <span>{calculation.suggestedBladeSize} mm</span>
-          </div>
-          <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Material</span>
             <span>{MATERIAL_LABELS[material]}</span>
           </div>

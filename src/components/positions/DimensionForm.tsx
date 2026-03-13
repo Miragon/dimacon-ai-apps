@@ -1,6 +1,7 @@
 import type { PositionType, MaterialType, Dimensions } from "@/types";
 import { MATERIAL_LABELS } from "@/types";
 import { MATERIAL_DENSITY } from "@/lib/calculations/common";
+import { suggestBladeDiameter } from "@/lib/calculations/blade-suggestion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -110,15 +111,11 @@ export function DimensionForm({
             </div>
           </div>
 
-          {/* Maße: Breite, Höhe, Wandstärke in einer Zeile */}
-          <div className="grid gap-4 sm:grid-cols-3">
+          {/* Maße: Breite, Höhe, Wandstärke, Max. Stückgewicht */}
+          <div className="grid gap-4 sm:grid-cols-4">
             {numField("width", "Breite", "width", "z.B. 1000")}
             {numField("height", "Höhe", "height", "z.B. 2100")}
             {numField("wallThickness", "Wandstärke", "wallThickness", "z.B. 240")}
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            {numField("bladeDiameter", "Blattdurchmesser", "bladeDiameter", "z.B. 600")}
             <div className="grid gap-1.5">
               <Label htmlFor="maxSegmentWeight">
                 Max. Stückgewicht <span className="text-muted-foreground text-xs">(kg)</span>
@@ -136,16 +133,38 @@ export function DimensionForm({
             </div>
           </div>
 
-          {/* Notizen */}
-          <div className="grid gap-1.5">
-            <Label htmlFor="notes">Notizen</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => onNotesChange(e.target.value)}
-              placeholder="Zusätzliche Hinweise..."
-              rows={2}
-            />
+          {/* Blattdurchmesser + Notizen */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor="bladeDiameter">
+                Blattdurchmesser <span className="text-muted-foreground text-xs">(mm)</span>
+              </Label>
+              <Input
+                id="bladeDiameter"
+                type="number"
+                value={dimensions.bladeDiameter ?? ""}
+                onChange={(e) =>
+                  updateDim("bladeDiameter", e.target.value ? Number(e.target.value) : undefined)
+                }
+                placeholder="z.B. 600"
+                min={0}
+              />
+              {dimensions.wallThickness > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Empfohlen: {suggestBladeDiameter(dimensions.wallThickness)} mm
+                </p>
+              )}
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="notes">Notizen</Label>
+              <Textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => onNotesChange(e.target.value)}
+                placeholder="Zusätzliche Hinweise..."
+                rows={2}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
