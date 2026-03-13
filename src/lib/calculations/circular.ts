@@ -30,6 +30,7 @@ export function calculateCircularOpening(
       totalWeight: 0,
       segmentWeight: 0,
       overlap: 0,
+      cutSurfaceArea: 0,
     };
   }
 
@@ -66,5 +67,6 @@ export function calculateCircularOpening(
     totalWeight: 0,
     segmentWeight: 0,
     overlap: 0,
+    cutSurfaceArea: 0,
   };
 }

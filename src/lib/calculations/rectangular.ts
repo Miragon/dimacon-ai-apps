@@ -126,6 +126,11 @@ export function calculateRectangularOpening(
   const cutLines = generateCutLines(widthMm, heightMm, horizontalCuts, verticalCuts, cutFromBothSides);
   const boreHolePositions = generateBoreHolePositions(widthMm, heightMm, horizontalCuts, verticalCuts);
 
+  // Schnittfläche: Gesamtlänge aller Schnittlinien × Wandstärke
+  const cutSurfaceArea = Math.round(
+    (horizontalCuts * widthMm + verticalCuts * heightMm) * wallThickness / 1_000_000 * 100
+  ) / 100;
+
   return {
     horizontalCuts,
     verticalCuts,
@@ -141,5 +146,6 @@ export function calculateRectangularOpening(
     totalWeight: Math.round(totalWeight * 10) / 10,
     segmentWeight: Math.round((totalWeight / segments) * 10) / 10,
     overlap,
+    cutSurfaceArea,
   };
 }

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Scissors, Ruler, Clock, Circle, Layers, ArrowLeftRight, Weight } from "lucide-react";
+import { Scissors, Ruler, Clock, Circle, Layers, ArrowLeftRight, Weight, Square } from "lucide-react";
 
 interface CalculationResultsProps {
   calculation: CalculationResult;
@@ -70,6 +70,13 @@ export function CalculationResults({
             label="Laufmeter"
             value={`${calculation.totalLinearMeters} m`}
           />
+          {calculation.cutSurfaceArea > 0 && (
+            <ResultItem
+              icon={<Square className="h-4 w-4" />}
+              label="Schnittfläche"
+              value={`${calculation.cutSurfaceArea} m²`}
+            />
+          )}
           <ResultItem
             icon={<Clock className="h-4 w-4" />}
             label="Geschätzte Zeit"
@@ -240,6 +247,7 @@ function RectangularBreakdown({
       <p className="mt-2">H-Schnitte: {calculation.horizontalCuts} ({calculation.horizontalCuts - 2 > 0 ? `2 Basis + ${calculation.horizontalCuts - 2} Teilung` : "2 Basis"})</p>
       <p>V-Schnitte: {calculation.verticalCuts} ({calculation.verticalCuts - 2 > 0 ? `2 Basis + ${calculation.verticalCuts - 2} Teilung` : "2 Basis"})</p>
       <p>Laufmeter: ({calculation.horizontalCuts}×{wM} + {calculation.verticalCuts}×{hM}){sideFactor > 1 ? ` × ${sideFactor} (beidseitig)` : ""} = {round2(totalLm)} m</p>
+      <p>Schnittfläche: ({calculation.horizontalCuts}×{w} + {calculation.verticalCuts}×{h}) × {t} / 1.000.000 = {calculation.cutSurfaceArea} m²</p>
       <p className="mt-2">Sägezeit: {round2(totalLm)} m × {timePerMeter} min/m = {sawTime} min</p>
       {calculation.cornerBoreHoles > 0 && (
         <p>Bohrungen: {calculation.cornerBoreHoles} × 5 min = {boreTime} min</p>

@@ -63,6 +63,7 @@ export interface CalculationResult {
   totalWeight: number;    // Gesamtgewicht in kg
   segmentWeight: number;  // Gewicht pro Segment in kg
   overlap: number;        // Berechnete Überlappung in mm
+  cutSurfaceArea: number; // Schnittfläche in m²
 }
 
 // Labels for UI display (German)

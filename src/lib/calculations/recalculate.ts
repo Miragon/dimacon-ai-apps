@@ -43,6 +43,11 @@ export function recalculateFromEdit(
       updated.cornerBoreHoles = (rows + 1) * (cols + 1) - Math.max(0, rows - 1) * Math.max(0, cols - 1);
     }
 
+    // Schnittfläche neu berechnen
+    updated.cutSurfaceArea = Math.round(
+      (updated.horizontalCuts * w + updated.verticalCuts * h) * dimensions.wallThickness / 1_000_000 * 100
+    ) / 100;
+
     updated.estimatedMinutes =
       estimateWallSawTime(updated.totalLinearMeters, material) +
       updated.cornerBoreHoles * 5;
