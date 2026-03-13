@@ -42,11 +42,13 @@ export function calculateCircularOpening(
 
   const boreHolePositions = [];
   const radius = diameterMm / 2;
+  const boreRadius = MAX_CROWN_DIAMETER / 2;
+  const placementRadius = radius - boreRadius;
   for (let i = 0; i < holesNeeded; i++) {
     const angle = (2 * Math.PI * i) / holesNeeded;
     boreHolePositions.push({
-      x: radius + radius * Math.cos(angle),
-      y: radius + radius * Math.sin(angle),
+      x: radius + placementRadius * Math.cos(angle),
+      y: radius + placementRadius * Math.sin(angle),
       diameter: MAX_CROWN_DIAMETER,
       label: `Bohrung ${i + 1}`,
     });

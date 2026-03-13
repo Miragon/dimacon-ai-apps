@@ -68,8 +68,11 @@ export function generateBoreHolePositions(
     for (let vi = 0; vi <= cols; vi++) {
       // Nur Rand-Positionen – interne Kreuzungen brauchen keine Bohrung
       if (hi > 0 && hi < rows && vi > 0 && vi < cols) continue;
-      const y = (heightMm * hi) / rows;
-      const x = (widthMm * vi) / cols;
+      const rawY = (heightMm * hi) / rows;
+      const rawX = (widthMm * vi) / cols;
+      const drillRadius = drillDiam / 2;
+      const x = Math.max(drillRadius, Math.min(widthMm - drillRadius, rawX));
+      const y = Math.max(drillRadius, Math.min(heightMm - drillRadius, rawY));
 
       const isTop = hi === 0;
       const isBottom = hi === rows;
