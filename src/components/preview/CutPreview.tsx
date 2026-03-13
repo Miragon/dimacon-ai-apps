@@ -228,38 +228,127 @@ function RectangularPreview({
         vertical
       />
 
-      {/* Horizontal segment distances (top) */}
+      {/* Horizontal segment distances (top) – single label when all equal */}
       {hasHSegments &&
-        sortedX.slice(0, -1).map((x, i) => {
-          const nextX = sortedX[i + 1];
-          return (
-            <DimensionLabel
-              key={`hseg-${i}`}
-              x1={offsetX + x * scale}
-              y1={offsetY - 15}
-              x2={offsetX + nextX * scale}
-              y2={offsetY - 15}
-              text={`${nextX - x} mm`}
-            />
-          );
-        })}
+        (() => {
+          const segMms = sortedX.slice(0, -1).map((x, i) => sortedX[i + 1] - x);
+          const allEqual = segMms.every((v) => Math.abs(v - segMms[0]) <= 1);
+          if (allEqual) {
+            const count = segMms.length;
+            const exactMm = Math.round(width / count);
+            const midIndex = Math.floor(count / 2);
+            const midLeft = offsetX + sortedX[midIndex] * scale;
+            const midRight = offsetX + sortedX[midIndex + 1] * scale;
+            return (
+              <DimensionLabel
+                x1={midLeft}
+                y1={offsetY - 15}
+                x2={midRight}
+                y2={offsetY - 15}
+                text={count > 1 ? `${count}x ${exactMm} mm` : `${exactMm} mm`}
+                tooltip={`${count} Segment${count > 1 ? "e" : ""} à ${exactMm} mm`}
+              />
+            );
+          }
+          // Fallback: staggered labels for unequal segments
+          const hSegPx = segMms.map((mm) => mm * scale);
+          const hStagger = computeStaggerLevels(hSegPx);
+          return sortedX.slice(0, -1).map((x, i) => {
+            const nextX = sortedX[i + 1];
+            const { level, abbreviate } = hStagger[i];
+            const baseY = offsetY - 15;
+            const labelY = baseY - level * STAGGER_STEP;
+            const segMm = segMms[i];
+            const displayText = abbreviate ? `${segMm}` : `${segMm} mm`;
+            const sx = offsetX + x * scale;
+            const ex = offsetX + nextX * scale;
+            return (
+              <g key={`hseg-${i}`}>
+                {level > 0 && (
+                  <line
+                    x1={(sx + ex) / 2}
+                    y1={baseY}
+                    x2={(sx + ex) / 2}
+                    y2={labelY}
+                    stroke="#999"
+                    strokeWidth="0.5"
+                    strokeDasharray="2,2"
+                  />
+                )}
+                <DimensionLabel
+                  x1={sx}
+                  y1={labelY}
+                  x2={ex}
+                  y2={labelY}
+                  text={displayText}
+                  tooltip={`${segMm} mm`}
+                />
+              </g>
+            );
+          });
+        })()}
 
-      {/* Vertical segment distances (left) */}
+      {/* Vertical segment distances (left) – single label when all equal */}
       {hasVSegments &&
-        sortedY.slice(0, -1).map((y, i) => {
-          const nextY = sortedY[i + 1];
-          return (
-            <DimensionLabel
-              key={`vseg-${i}`}
-              x1={offsetX - 15}
-              y1={offsetY + y * scale}
-              x2={offsetX - 15}
-              y2={offsetY + nextY * scale}
-              text={`${nextY - y} mm`}
-              vertical
-            />
-          );
-        })}
+        (() => {
+          const segMms = sortedY.slice(0, -1).map((y, i) => sortedY[i + 1] - y);
+          const allEqual = segMms.every((v) => Math.abs(v - segMms[0]) <= 1);
+          if (allEqual) {
+            const count = segMms.length;
+            const exactMm = Math.round(height / count);
+            const midIndex = Math.floor(count / 2);
+            const midTop = offsetY + sortedY[midIndex] * scale;
+            const midBot = offsetY + sortedY[midIndex + 1] * scale;
+            return (
+              <DimensionLabel
+                x1={offsetX - 15}
+                y1={midTop}
+                x2={offsetX - 15}
+                y2={midBot}
+                text={count > 1 ? `${count}x ${exactMm} mm` : `${exactMm} mm`}
+                tooltip={`${count} Segment${count > 1 ? "e" : ""} à ${exactMm} mm`}
+                vertical
+              />
+            );
+          }
+          // Fallback: staggered labels for unequal segments
+          const vSegPx = segMms.map((mm) => mm * scale);
+          const vStagger = computeStaggerLevels(vSegPx);
+          return sortedY.slice(0, -1).map((y, i) => {
+            const nextY = sortedY[i + 1];
+            const { level, abbreviate } = vStagger[i];
+            const baseX = offsetX - 15;
+            const labelX = baseX - level * STAGGER_STEP;
+            const segMm = segMms[i];
+            const displayText = abbreviate ? `${segMm}` : `${segMm} mm`;
+            const sy = offsetY + y * scale;
+            const ey = offsetY + nextY * scale;
+            return (
+              <g key={`vseg-${i}`}>
+                {level > 0 && (
+                  <line
+                    x1={baseX}
+                    y1={(sy + ey) / 2}
+                    x2={labelX}
+                    y2={(sy + ey) / 2}
+                    stroke="#999"
+                    strokeWidth="0.5"
+                    strokeDasharray="2,2"
+                  />
+                )}
+                <DimensionLabel
+                  x1={labelX}
+                  y1={sy}
+                  x2={labelX}
+                  y2={ey}
+                  text={displayText}
+                  tooltip={`${segMm} mm`}
+                  vertical
+                />
+              </g>
+            );
+          });
+        })()}
     </g>
   );
 }
@@ -304,6 +393,30 @@ function CircularPreview({
   );
 }
 
+/** Estimate pixel width of a label string at fontSize 10 (~6px per char) */
+function estimateLabelWidth(text: string): number {
+  return text.length * 6;
+}
+
+/**
+ * Compute stagger levels for a list of segment pixel widths.
+ * Returns per-segment { level, abbreviate } so labels can be spread across rows.
+ */
+function computeStaggerLevels(segmentPixelSizes: number[]): { level: number; abbreviate: boolean }[] {
+  const MIN_LABEL_PX = 38; // minimum space needed for abbreviated label (e.g. "250")
+  const FULL_LABEL_PX = 55; // space needed for full label (e.g. "250 mm")
+
+  const minSegment = Math.min(...segmentPixelSizes);
+  const numLevels = minSegment < MIN_LABEL_PX ? 3 : minSegment < FULL_LABEL_PX ? 2 : 1;
+
+  return segmentPixelSizes.map((px, i) => ({
+    level: numLevels > 1 ? i % numLevels : 0,
+    abbreviate: px < FULL_LABEL_PX,
+  }));
+}
+
+const STAGGER_STEP = 17; // px between stagger levels
+
 function DimensionLabel({
   x1,
   y1,
@@ -311,6 +424,7 @@ function DimensionLabel({
   y2,
   text,
   vertical,
+  tooltip,
 }: {
   x1: number;
   y1: number;
@@ -318,6 +432,7 @@ function DimensionLabel({
   y2: number;
   text: string;
   vertical?: boolean;
+  tooltip?: string;
 }) {
   const midX = (x1 + x2) / 2;
   const midY = (y1 + y2) / 2;
@@ -346,6 +461,7 @@ function DimensionLabel({
         fill="#666"
         transform={vertical ? `rotate(-90, ${midX}, ${midY})` : undefined}
       >
+        <title>{tooltip ?? text}</title>
         {text}
       </text>
     </g>
