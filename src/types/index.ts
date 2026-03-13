@@ -29,7 +29,6 @@ export interface Dimensions {
   wallThickness: number;
   diameter?: number;
   bladeDiameter: number;
-  bladeOverlap: number;
   maxSegmentWeight: number; // kg – max weight per individual piece
 }
 
@@ -63,6 +62,7 @@ export interface CalculationResult {
   boreHolePositions: BoreHolePosition[];
   totalWeight: number;    // Gesamtgewicht in kg
   segmentWeight: number;  // Gewicht pro Segment in kg
+  overlap: number;        // Berechnete Überlappung in mm
 }
 
 // Labels for UI display (German)

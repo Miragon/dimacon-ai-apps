@@ -44,6 +44,13 @@ export function needsCutFromBothSides(wallThickness: number, bladeDiameter: numb
   return wallThickness > calculateMaxCutDepth(bladeDiameter);
 }
 
+export function calculateOverlap(wallThickness: number, bladeDiameter: number): number {
+  const r = calculateMaxCutDepth(bladeDiameter);
+  const cutFromBothSides = needsCutFromBothSides(wallThickness, bladeDiameter);
+  const d = cutFromBothSides ? wallThickness / 2 : wallThickness;
+  return r - Math.sqrt(r * r - d * d);
+}
+
 export function calculateSegmentWeight(
   widthMm: number,
   heightMm: number,

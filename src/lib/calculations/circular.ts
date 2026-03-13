@@ -29,6 +29,7 @@ export function calculateCircularOpening(
       ],
       totalWeight: 0,
       segmentWeight: 0,
+      overlap: 0,
     };
   }
 
@@ -64,5 +65,6 @@ export function calculateCircularOpening(
     boreHolePositions,
     totalWeight: 0,
     segmentWeight: 0,
+    overlap: 0,
   };
 }

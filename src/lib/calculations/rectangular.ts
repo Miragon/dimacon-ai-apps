@@ -1,5 +1,5 @@
 import type { MaterialType, CalculationResult, CutLine, BoreHolePosition } from "@/types";
-import { needsCutFromBothSides, calculateSegmentWeight, MAX_SEGMENT_WEIGHT } from "./common";
+import { needsCutFromBothSides, calculateSegmentWeight, calculateOverlap, MAX_SEGMENT_WEIGHT } from "./common";
 import { suggestBladeDiameter } from "./blade-suggestion";
 import { estimateWallSawTime } from "./time-estimation";
 
@@ -53,6 +53,8 @@ export function generateBoreHolePositions(
 
   for (let hi = 0; hi <= rows; hi++) {
     for (let vi = 0; vi <= cols; vi++) {
+      // Nur Rand-Positionen – interne Kreuzungen brauchen keine Bohrung
+      if (hi > 0 && hi < rows && vi > 0 && vi < cols) continue;
       const y = (heightMm * hi) / rows;
       const x = (widthMm * vi) / cols;
       let label: string;
@@ -74,7 +76,6 @@ export function calculateRectangularOpening(
   wallThickness: number,
   material: MaterialType,
   bladeDiameter: number,
-  _bladeOverlap: number = 20,
   maxSegmentWeight: number = MAX_SEGMENT_WEIGHT
 ): CalculationResult {
   const suggestedBladeSize = suggestBladeDiameter(wallThickness);
@@ -109,8 +110,13 @@ export function calculateRectangularOpening(
   const sideFactor = cutFromBothSides ? 2 : 1;
   totalLinearMeters *= sideFactor;
 
-  // Bore holes at all intersection points of cut lines
-  const cornerBoreHoles = horizontalCuts * verticalCuts;
+  // Bore holes only at edge intersection points (not internal crossings)
+  const rows = horizontalCuts - 1;
+  const cols = verticalCuts - 1;
+  const cornerBoreHoles = (rows + 1) * (cols + 1) - Math.max(0, rows - 1) * Math.max(0, cols - 1);
+
+  // Überlappung aus Wandstärke und Blattdurchmesser berechnen
+  const overlap = Math.round(calculateOverlap(wallThickness, effectiveBlade) * 10) / 10;
 
   // Time estimation
   const estimatedMinutes = estimateWallSawTime(totalLinearMeters, material) +
@@ -134,5 +140,6 @@ export function calculateRectangularOpening(
     boreHolePositions,
     totalWeight: Math.round(totalWeight * 10) / 10,
     segmentWeight: Math.round((totalWeight / segments) * 10) / 10,
+    overlap,
   };
 }

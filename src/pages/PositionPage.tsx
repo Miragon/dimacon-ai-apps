@@ -26,7 +26,6 @@ export function PositionPage() {
     existingPosition?.dimensions ?? {
       wallThickness: 240,
       bladeDiameter: 600,
-      bladeOverlap: 20,
       maxSegmentWeight: 150,
     }
   );

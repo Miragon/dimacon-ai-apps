@@ -116,6 +116,12 @@ export function CalculationResults({
             <span className="text-muted-foreground">Eckbohrungen</span>
             {editableField("cornerBoreHoles", calculation.cornerBoreHoles, "Eckbohrungen")}
           </div>
+          {calculation.overlap > 0 && (
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Überlappung (berechnet)</span>
+              <span>{calculation.overlap} mm</span>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Empfohlenes Blatt</span>
             <span>{calculation.suggestedBladeSize} mm</span>

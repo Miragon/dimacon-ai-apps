@@ -140,9 +140,8 @@ export function DimensionForm({
           {numField("wallThickness", "Wandstärke / Materialstärke", "wallThickness", "z.B. 240")}
 
           {shape === "rectangular" && (
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2">
               {numField("bladeDiameter", "Blattdurchmesser", "bladeDiameter", "z.B. 600")}
-              {numField("bladeOverlap", "Überlappung", "bladeOverlap", "z.B. 20")}
               <div className="grid gap-1.5">
                 <Label htmlFor="maxSegmentWeight">
                   Max. Stückgewicht <span className="text-muted-foreground text-xs">(kg)</span>

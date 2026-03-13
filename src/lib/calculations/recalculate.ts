@@ -36,9 +36,11 @@ export function recalculateFromEdit(
       ? Math.round((updated.totalWeight / updated.segments) * 10) / 10
       : 0;
 
-    // Auto-update bore holes when cut counts change
+    // Auto-update bore holes when cut counts change (only edge intersections)
     if (field === "horizontalCuts" || field === "verticalCuts") {
-      updated.cornerBoreHoles = updated.horizontalCuts * updated.verticalCuts;
+      const rows = updated.horizontalCuts - 1;
+      const cols = updated.verticalCuts - 1;
+      updated.cornerBoreHoles = (rows + 1) * (cols + 1) - Math.max(0, rows - 1) * Math.max(0, cols - 1);
     }
 
     updated.estimatedMinutes =
