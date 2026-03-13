@@ -1,22 +1,15 @@
-import type { PositionType, OpeningShape, MaterialType, Dimensions } from "@/types";
-import { MATERIAL_LABELS, SHAPE_LABELS } from "@/types";
+import type { PositionType, MaterialType, Dimensions } from "@/types";
+import { MATERIAL_LABELS } from "@/types";
+import { MATERIAL_DENSITY } from "@/lib/calculations/common";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 interface DimensionFormProps {
   positionType: PositionType;
-  shape: OpeningShape;
-  onShapeChange: (shape: OpeningShape) => void;
   material: MaterialType;
   onMaterialChange: (material: MaterialType) => void;
   dimensions: Dimensions;
@@ -29,8 +22,6 @@ interface DimensionFormProps {
 }
 
 export function DimensionForm({
-  shape,
-  onShapeChange,
   material,
   onMaterialChange,
   dimensions,
@@ -81,86 +72,71 @@ export function DimensionForm({
           <CardTitle className="text-base">Grunddaten & Maße</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Grunddaten in einer Zeile */}
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="grid gap-1.5">
-              <Label htmlFor="label">Bezeichnung</Label>
-              <Input
-                id="label"
-                value={label}
-                onChange={(e) => onLabelChange(e.target.value)}
-                placeholder="z.B. Tür EG links"
-              />
-            </div>
+          {/* Bezeichnung */}
+          <div className="grid gap-1.5">
+            <Label htmlFor="label">Bezeichnung</Label>
+            <Input
+              id="label"
+              value={label}
+              onChange={(e) => onLabelChange(e.target.value)}
+              placeholder="z.B. Tür EG links"
+            />
+          </div>
 
-            <div className="grid gap-1.5">
-              <Label>Material</Label>
-              <Select value={material} onValueChange={(v) => onMaterialChange(v as MaterialType)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(MATERIAL_LABELS).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-1.5">
-              <Label>Form</Label>
-              <Select value={shape} onValueChange={(v) => onShapeChange(v as OpeningShape)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(SHAPE_LABELS).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {/* Material-Radio */}
+          <div className="grid gap-1.5">
+            <Label>Material</Label>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {(Object.entries(MATERIAL_LABELS) as [MaterialType, string][]).map(
+                ([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => onMaterialChange(key)}
+                    className={cn(
+                      "rounded-md border px-3 py-2 text-left text-sm transition-colors",
+                      key === material
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-border hover:border-foreground/25"
+                    )}
+                  >
+                    <div className="font-medium">{label}</div>
+                    <div className="text-muted-foreground text-xs">
+                      {MATERIAL_DENSITY[key].toLocaleString("de-DE")} kg/m³
+                    </div>
+                  </button>
+                )
+              )}
             </div>
           </div>
 
-          {/* Maße */}
-          {shape === "rectangular" && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {numField("width", "Breite", "width", "z.B. 1000")}
-              {numField("height", "Höhe", "height", "z.B. 2100")}
+          {/* Maße: Breite, Höhe, Wandstärke in einer Zeile */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            {numField("width", "Breite", "width", "z.B. 1000")}
+            {numField("height", "Höhe", "height", "z.B. 2100")}
+            {numField("wallThickness", "Wandstärke", "wallThickness", "z.B. 240")}
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {numField("bladeDiameter", "Blattdurchmesser", "bladeDiameter", "z.B. 600")}
+            <div className="grid gap-1.5">
+              <Label htmlFor="maxSegmentWeight">
+                Max. Stückgewicht <span className="text-muted-foreground text-xs">(kg)</span>
+              </Label>
+              <Input
+                id="maxSegmentWeight"
+                type="number"
+                value={dimensions.maxSegmentWeight}
+                onChange={(e) =>
+                  updateDim("maxSegmentWeight", e.target.value ? Number(e.target.value) : 150)
+                }
+                placeholder="z.B. 150"
+                min={1}
+              />
             </div>
-          )}
+          </div>
 
-          {shape === "circular" &&
-            numField("diameter", "Durchmesser", "diameter", "z.B. 200")}
-
-          {numField("wallThickness", "Wandstärke / Materialstärke", "wallThickness", "z.B. 240")}
-
-          {shape === "rectangular" && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {numField("bladeDiameter", "Blattdurchmesser", "bladeDiameter", "z.B. 600")}
-              <div className="grid gap-1.5">
-                <Label htmlFor="maxSegmentWeight">
-                  Max. Stückgewicht <span className="text-muted-foreground text-xs">(kg)</span>
-                </Label>
-                <Input
-                  id="maxSegmentWeight"
-                  type="number"
-                  value={dimensions.maxSegmentWeight}
-                  onChange={(e) =>
-                    updateDim("maxSegmentWeight", e.target.value ? Number(e.target.value) : 150)
-                  }
-                  placeholder="z.B. 150"
-                  min={1}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Notizen inline */}
+          {/* Notizen */}
           <div className="grid gap-1.5">
             <Label htmlFor="notes">Notizen</Label>
             <Textarea

@@ -6,7 +6,7 @@ import { useOrder, useOrderActions } from "@/hooks/use-orders";
 import { DimensionForm } from "@/components/positions/DimensionForm";
 import { CalculationResults } from "@/components/positions/CalculationResults";
 import { CutPreview } from "@/components/preview/CutPreview";
-import type { OpeningShape, MaterialType, Dimensions, Position, CalculationResult } from "@/types";
+import type { MaterialType, Dimensions, Position, CalculationResult } from "@/types";
 import { calculatePosition } from "@/lib/calculations";
 import { recalculateFromEdit } from "@/lib/calculations/recalculate";
 
@@ -19,7 +19,7 @@ export function PositionPage() {
   const isEditMode = !!positionId;
   const existingPosition = order?.positions.find((p) => p.id === positionId);
 
-  const [shape, setShape] = useState<OpeningShape>(existingPosition?.shape ?? "rectangular");
+  const shape = "rectangular" as const;
   const [material, setMaterial] = useState<MaterialType>(existingPosition?.material ?? "beton");
   const [label, setLabel] = useState(existingPosition?.label ?? "");
   const [dimensions, setDimensions] = useState<Dimensions>(
@@ -149,11 +149,6 @@ export function PositionPage() {
 
       <DimensionForm
         positionType={positionType}
-        shape={shape}
-        onShapeChange={(s) => {
-          setShape(s);
-          setEditedCalc(null);
-        }}
         material={material}
         onMaterialChange={(m) => {
           setMaterial(m);
