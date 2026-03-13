@@ -123,9 +123,9 @@ export function DimensionForm({
               <Input
                 id="maxSegmentWeight"
                 type="number"
-                value={dimensions.maxSegmentWeight}
+                value={dimensions.maxSegmentWeight ?? ""}
                 onChange={(e) =>
-                  updateDim("maxSegmentWeight", e.target.value ? Number(e.target.value) : 150)
+                  updateDim("maxSegmentWeight", e.target.value ? Number(e.target.value) : undefined)
                 }
                 placeholder="z.B. 150"
                 min={1}

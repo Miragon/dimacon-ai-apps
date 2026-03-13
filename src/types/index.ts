@@ -29,7 +29,7 @@ export interface Dimensions {
   wallThickness: number;
   diameter?: number;
   bladeDiameter: number;
-  maxSegmentWeight: number; // kg – max weight per individual piece
+  maxSegmentWeight?: number; // kg – max weight per individual piece, defaults to 150
 }
 
 export interface CutLine {

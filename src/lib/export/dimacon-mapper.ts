@@ -39,7 +39,7 @@ function mapPosition(position: Position): WorkingPositionTO {
       height: position.dimensions.height,
       wallThickness: position.dimensions.wallThickness,
       diameter: position.dimensions.diameter,
-      maxSegmentWeight: position.dimensions.maxSegmentWeight,
+      maxSegmentWeight: position.dimensions.maxSegmentWeight ?? 150,
     },
     calculation: position.calculation
       ? {

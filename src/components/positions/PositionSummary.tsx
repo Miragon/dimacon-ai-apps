@@ -23,7 +23,7 @@ export function PositionSummary({ position }: PositionSummaryProps) {
         {d.diameter != null && <Row label="Durchmesser" value={`${d.diameter} mm`} />}
         <Row label="Wandstärke" value={`${d.wallThickness} mm`} />
         {d.bladeDiameter > 0 && <Row label="Blattdurchmesser" value={`${d.bladeDiameter} mm`} />}
-        <Row label="Max. Stückgewicht" value={`${d.maxSegmentWeight} kg`} />
+        <Row label="Max. Stückgewicht" value={`${d.maxSegmentWeight ?? 150} kg`} />
         {position.notes && <Row label="Notizen" value={position.notes} />}
       </CardContent>
     </Card>
