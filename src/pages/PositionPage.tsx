@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, RotateCcw, Save } from "lucide-react";
+import { ArrowLeft, Trash2, RotateCcw, RefreshCw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useOrder, useOrderActions } from "@/hooks/use-orders";
 import { DimensionForm } from "@/components/positions/DimensionForm";
@@ -30,10 +30,11 @@ export function PositionPage() {
     }
   );
   const [notes, setNotes] = useState(existingPosition?.notes ?? "");
-  const [editedCalc, setEditedCalc] = useState<CalculationResult | null>(
+  const [displayedCalc, setDisplayedCalc] = useState<CalculationResult | null>(
     existingPosition?.calculation ?? null
   );
   const [hasManualEdits, setHasManualEdits] = useState(false);
+  const [needsRecalc, setNeedsRecalc] = useState(false);
 
   if (!order || (isEditMode && !existingPosition)) {
     return (
@@ -63,7 +64,7 @@ export function PositionPage() {
   };
 
   const autoCalc = calculatePosition(tempPosition);
-  const calculation = editedCalc ?? autoCalc;
+  const calculation = displayedCalc ?? autoCalc;
 
   const handleFieldChange = (field: keyof CalculationResult, value: number) => {
     if (!calculation) return;
@@ -76,7 +77,7 @@ export function PositionPage() {
       positionType,
       shape
     );
-    setEditedCalc(recalculated);
+    setDisplayedCalc(recalculated);
     setHasManualEdits(true);
   };
 
@@ -86,24 +87,38 @@ export function PositionPage() {
       ds[side] = !ds[side];
       return { ...prev, disabledSides: ds };
     });
-    setEditedCalc(null);
+    // Seitenschnitte wirken sofort
+    setDisplayedCalc(null);
+    setNeedsRecalc(false);
     setHasManualEdits(false);
   };
 
   const handleDimensionsChange = (dims: Dimensions) => {
+    // Aktuelle Berechnung einfrieren bevor Grunddaten geändert werden
+    if (!needsRecalc) {
+      setDisplayedCalc(calculation);
+    }
     setDimensions(dims);
-    setEditedCalc(null);
-    setHasManualEdits(false);
+    setNeedsRecalc(true);
   };
 
   const handleMaterialChange = (mat: MaterialType) => {
+    // Aktuelle Berechnung einfrieren bevor Grunddaten geändert werden
+    if (!needsRecalc) {
+      setDisplayedCalc(calculation);
+    }
     setMaterial(mat);
-    setEditedCalc(null);
+    setNeedsRecalc(true);
+  };
+
+  const handleRecalculate = () => {
+    setDisplayedCalc(null);
+    setNeedsRecalc(false);
     setHasManualEdits(false);
   };
 
   const handleResetCalc = () => {
-    setEditedCalc(null);
+    setDisplayedCalc(null);
     setHasManualEdits(false);
   };
 
@@ -156,7 +171,13 @@ export function PositionPage() {
             {isEditMode ? `Position #${existingPosition!.sortOrder + 1}` : "Maße & Berechnung"}
           </p>
         </div>
-        {hasManualEdits && (
+        {needsRecalc && (
+          <Button variant="outline" onClick={handleRecalculate}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Neu berechnen
+          </Button>
+        )}
+        {hasManualEdits && !needsRecalc && (
           <Button variant="outline" onClick={handleResetCalc}>
             <RotateCcw className="mr-2 h-4 w-4" />
             Zurücksetzen

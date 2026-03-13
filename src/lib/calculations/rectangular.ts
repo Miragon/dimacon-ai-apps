@@ -76,15 +76,12 @@ export function generateBoreHolePositions(
       const isLeft = vi === 0;
       const isRight = vi === cols;
 
-      // Corner bore holes: skip if any adjacent side is disabled
-      const isCorner = (isTop || isBottom) && (isLeft || isRight);
-      if (isCorner && disabledSides) {
-        const adjacentDisabled =
-          (isTop && disabledSides.top) ||
-          (isBottom && disabledSides.bottom) ||
-          (isLeft && disabledSides.left) ||
-          (isRight && disabledSides.right);
-        if (adjacentDisabled) continue;
+      // Bohrungen auf deaktivierten Seiten überspringen
+      if (disabledSides) {
+        if (isTop && disabledSides.top) continue;
+        if (isBottom && disabledSides.bottom) continue;
+        if (isLeft && disabledSides.left) continue;
+        if (isRight && disabledSides.right) continue;
       }
 
       let label: string;

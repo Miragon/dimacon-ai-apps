@@ -1,5 +1,124 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CalculationResult, Dimensions, PositionType, OpeningShape, DisabledSides } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+// --- Pan & Zoom hook ---
+
+interface ViewBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+function usePanZoom(initialWidth: number, initialHeight: number) {
+  const initial: ViewBox = { x: 0, y: 0, width: initialWidth, height: initialHeight };
+  const [viewBox, setViewBox] = useState<ViewBox>(initial);
+  const [isPanning, setIsPanning] = useState(false);
+  const panStart = useRef<{ x: number; y: number; vbX: number; vbY: number } | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  const isZoomed = viewBox.width < initialWidth - 0.5 || viewBox.height < initialHeight - 0.5;
+
+  const screenToSVG = useCallback(
+    (clientX: number, clientY: number): { x: number; y: number } => {
+      const svg = svgRef.current;
+      if (!svg) return { x: 0, y: 0 };
+      const rect = svg.getBoundingClientRect();
+      const scaleX = viewBox.width / rect.width;
+      const scaleY = viewBox.height / rect.height;
+      return {
+        x: viewBox.x + (clientX - rect.left) * scaleX,
+        y: viewBox.y + (clientY - rect.top) * scaleY,
+      };
+    },
+    [viewBox],
+  );
+
+  // Clamp viewBox so it stays within bounds
+  const clampViewBox = useCallback(
+    (vb: ViewBox): ViewBox => {
+      const w = Math.min(Math.max(vb.width, initialWidth / 4), initialWidth);
+      const h = Math.min(Math.max(vb.height, initialHeight / 4), initialHeight);
+      const x = Math.min(Math.max(vb.x, 0), initialWidth - w);
+      const y = Math.min(Math.max(vb.y, 0), initialHeight - h);
+      return { x, y, width: w, height: h };
+    },
+    [initialWidth, initialHeight],
+  );
+
+  // Attach wheel listener via useEffect with { passive: false } so preventDefault works
+  const wheelHandler = useCallback(
+    (e: WheelEvent) => {
+      e.preventDefault();
+      const pt = screenToSVG(e.clientX, e.clientY);
+      const factor = e.deltaY > 0 ? 1.05 : 0.95;
+      const newWidth = viewBox.width * factor;
+      const newHeight = viewBox.height * factor;
+      const newX = pt.x - (pt.x - viewBox.x) * (newWidth / viewBox.width);
+      const newY = pt.y - (pt.y - viewBox.y) * (newHeight / viewBox.height);
+      setViewBox(clampViewBox({ x: newX, y: newY, width: newWidth, height: newHeight }));
+    },
+    [viewBox, screenToSVG, clampViewBox],
+  );
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    svg.addEventListener("wheel", wheelHandler, { passive: false });
+    return () => svg.removeEventListener("wheel", wheelHandler);
+  }, [wheelHandler]);
+
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent<SVGSVGElement>) => {
+      // Only pan on primary button & when zoomed in
+      if (e.button !== 0 || !isZoomed) return;
+      setIsPanning(true);
+      panStart.current = { x: e.clientX, y: e.clientY, vbX: viewBox.x, vbY: viewBox.y };
+      (e.target as Element).setPointerCapture(e.pointerId);
+    },
+    [viewBox, isZoomed],
+  );
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent<SVGSVGElement>) => {
+      if (!isPanning || !panStart.current) return;
+      const svg = svgRef.current;
+      if (!svg) return;
+      const rect = svg.getBoundingClientRect();
+      const scaleX = viewBox.width / rect.width;
+      const scaleY = viewBox.height / rect.height;
+      const dx = (e.clientX - panStart.current.x) * scaleX;
+      const dy = (e.clientY - panStart.current.y) * scaleY;
+      setViewBox(
+        clampViewBox({
+          x: panStart.current.vbX - dx,
+          y: panStart.current.vbY - dy,
+          width: viewBox.width,
+          height: viewBox.height,
+        }),
+      );
+    },
+    [isPanning, viewBox, clampViewBox],
+  );
+
+  const onPointerUp = useCallback(() => {
+    setIsPanning(false);
+    panStart.current = null;
+  }, []);
+
+  const onDoubleClick = useCallback(() => {
+    setViewBox(initial);
+  }, [initial]);
+
+  return {
+    svgRef,
+    viewBox,
+    isZoomed,
+    isPanning,
+    handlers: { onPointerDown, onPointerMove, onPointerUp, onDoubleClick },
+  };
+}
 
 type SideKey = keyof DisabledSides;
 
@@ -57,6 +176,7 @@ export function CutPreview({ calculation, dimensions, shape, disabledSides, onTo
   const offsetY = (SVG_HEIGHT - scaledH) / 2;
 
   const showToggles = !isCircular && !!onToggleSide;
+  const { svgRef, viewBox: vb, isZoomed, isPanning, handlers } = usePanZoom(SVG_WIDTH, SVG_HEIGHT);
 
   const toggleButton = (side: SideKey, label: string, className: string) => {
     const isDisabled = !!disabledSides?.[side];
@@ -86,9 +206,15 @@ export function CutPreview({ calculation, dimensions, shape, disabledSides, onTo
           <div className="flex items-center gap-1 w-full">
             {showToggles && toggleButton("left", "Links", "")}
             <svg
-              viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
-              className="flex-1 rounded-md border bg-white"
-              style={{ maxHeight: 400 }}
+              ref={svgRef}
+              viewBox={`${vb.x} ${vb.y} ${vb.width} ${vb.height}`}
+              className="flex-1 rounded-md border bg-white select-none"
+              style={{
+                maxHeight: 400,
+                cursor: isZoomed ? (isPanning ? "grabbing" : "grab") : "default",
+                touchAction: "none",
+              }}
+              {...handlers}
             >
               {/* Background grid */}
               <defs>
@@ -116,6 +242,20 @@ export function CutPreview({ calculation, dimensions, shape, disabledSides, onTo
                   dimensions={dimensions}
                   scale={scale}
                 />
+              )}
+
+              {/* Zoom hint overlay */}
+              {isZoomed && (
+                <text
+                  x={vb.x + vb.width - 8}
+                  y={vb.y + vb.height - 8}
+                  textAnchor="end"
+                  fontSize={Math.max(9, vb.width * 0.022)}
+                  fill="#999"
+                  pointerEvents="none"
+                >
+                  Doppelklick zum Zurücksetzen
+                </text>
               )}
             </svg>
             {showToggles && toggleButton("right", "Rechts", "")}
