@@ -1,5 +1,6 @@
 import type { CalculationResult, Dimensions, MaterialType, PositionType, OpeningShape } from "@/types";
 import { estimateWallSawTime, estimateCoreDrillTime } from "./time-estimation";
+import { generateCutLines, generateBoreHolePositions } from "./rectangular";
 
 /**
  * Recalculates derived values (totalCuts, totalLinearMeters, estimatedMinutes)
@@ -27,17 +28,26 @@ export function recalculateFromEdit(
     const sideFactor = updated.cutFromBothSides ? 2 : 1;
     updated.totalLinearMeters = Math.round((hLm + vLm) * sideFactor * 100) / 100;
 
-    // Segments from extra horizontal cuts beyond the base 2 (top + bottom)
-    updated.segments = Math.max(1, updated.horizontalCuts - 1);
+    // Segments = rows × columns (horizontal and vertical both contribute)
+    updated.segments = Math.max(1, (updated.horizontalCuts - 1) * (updated.verticalCuts - 1));
 
     // Recalculate segment weight
     updated.segmentWeight = updated.totalWeight > 0
       ? Math.round((updated.totalWeight / updated.segments) * 10) / 10
       : 0;
 
+    // Auto-update bore holes when cut counts change
+    if (field === "horizontalCuts" || field === "verticalCuts") {
+      updated.cornerBoreHoles = updated.horizontalCuts * updated.verticalCuts;
+    }
+
     updated.estimatedMinutes =
       estimateWallSawTime(updated.totalLinearMeters, material) +
       updated.cornerBoreHoles * 5;
+
+    // Regenerate cut lines and bore hole positions for SVG
+    updated.cutLines = generateCutLines(w, h, updated.horizontalCuts, updated.verticalCuts, updated.cutFromBothSides);
+    updated.boreHolePositions = generateBoreHolePositions(w, h, updated.horizontalCuts, updated.verticalCuts);
   } else if (shape === "circular") {
     updated.estimatedMinutes = estimateCoreDrillTime(updated.totalLinearMeters, material);
   }

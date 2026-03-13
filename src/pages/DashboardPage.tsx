@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,10 @@ export function DashboardPage() {
   const location = useLocation();
   const orders = useOrders();
   const [showNewOrder, setShowNewOrder] = useState(false);
-  const handled = useRef(false);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    if (params.get("new") === "true" && !handled.current) {
-      handled.current = true;
+    if (params.get("new") === "true") {
       setShowNewOrder(true);
       navigate("/", { replace: true });
     }

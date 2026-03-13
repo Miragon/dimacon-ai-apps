@@ -52,7 +52,7 @@ export function DimensionForm({
     placeholder: string,
     unit: string = "mm"
   ) => (
-    <div className="grid gap-2">
+    <div className="grid gap-1.5">
       <Label htmlFor={id}>
         {labelText} <span className="text-muted-foreground text-xs">({unit})</span>
       </Label>
@@ -77,60 +77,56 @@ export function DimensionForm({
   return (
     <form onSubmit={onSubmit ? handleSubmit : undefined} className="space-y-4">
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Grunddaten</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Grunddaten & Maße</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-2">
-            <Label htmlFor="label">Bezeichnung</Label>
-            <Input
-              id="label"
-              value={label}
-              onChange={(e) => onLabelChange(e.target.value)}
-              placeholder="z.B. Tür EG links"
-            />
+          {/* Grunddaten in einer Zeile */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="label">Bezeichnung</Label>
+              <Input
+                id="label"
+                value={label}
+                onChange={(e) => onLabelChange(e.target.value)}
+                placeholder="z.B. Tür EG links"
+              />
+            </div>
+
+            <div className="grid gap-1.5">
+              <Label>Material</Label>
+              <Select value={material} onValueChange={(v) => onMaterialChange(v as MaterialType)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(MATERIAL_LABELS).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-1.5">
+              <Label>Form</Label>
+              <Select value={shape} onValueChange={(v) => onShapeChange(v as OpeningShape)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(SHAPE_LABELS).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div className="grid gap-2">
-            <Label>Material</Label>
-            <Select value={material} onValueChange={(v) => onMaterialChange(v as MaterialType)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(MATERIAL_LABELS).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-2">
-            <Label>Form</Label>
-            <Select value={shape} onValueChange={(v) => onShapeChange(v as OpeningShape)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(SHAPE_LABELS).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Maße</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Rectangular openings */}
+          {/* Maße */}
           {shape === "rectangular" && (
             <div className="grid gap-4 sm:grid-cols-2">
               {numField("width", "Breite", "width", "z.B. 1000")}
@@ -138,56 +134,44 @@ export function DimensionForm({
             </div>
           )}
 
-          {/* Circular openings */}
           {shape === "circular" &&
             numField("diameter", "Durchmesser", "diameter", "z.B. 200")}
 
-          {/* Common: wall thickness */}
           {numField("wallThickness", "Wandstärke / Materialstärke", "wallThickness", "z.B. 240")}
 
-          {/* Blade settings for rectangular cuts */}
           {shape === "rectangular" && (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               {numField("bladeDiameter", "Blattdurchmesser", "bladeDiameter", "z.B. 600")}
               {numField("bladeOverlap", "Überlappung", "bladeOverlap", "z.B. 20")}
+              <div className="grid gap-1.5">
+                <Label htmlFor="maxSegmentWeight">
+                  Max. Stückgewicht <span className="text-muted-foreground text-xs">(kg)</span>
+                </Label>
+                <Input
+                  id="maxSegmentWeight"
+                  type="number"
+                  value={dimensions.maxSegmentWeight}
+                  onChange={(e) =>
+                    updateDim("maxSegmentWeight", e.target.value ? Number(e.target.value) : 150)
+                  }
+                  placeholder="z.B. 150"
+                  min={1}
+                />
+              </div>
             </div>
           )}
 
-          {/* Max segment weight for rectangular openings */}
-          {shape === "rectangular" && (
-            <div className="grid gap-2">
-              <Label htmlFor="maxSegmentWeight">
-                Max. Stückgewicht <span className="text-muted-foreground text-xs">(kg)</span>
-              </Label>
-              <Input
-                id="maxSegmentWeight"
-                type="number"
-                value={dimensions.maxSegmentWeight}
-                onChange={(e) =>
-                  updateDim("maxSegmentWeight", e.target.value ? Number(e.target.value) : 150)
-                }
-                placeholder="z.B. 150"
-                min={1}
-              />
-              <p className="text-xs text-muted-foreground">
-                Stücke über diesem Gewicht werden automatisch segmentiert
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Notizen</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Textarea
-            value={notes}
-            onChange={(e) => onNotesChange(e.target.value)}
-            placeholder="Zusätzliche Hinweise..."
-            rows={3}
-          />
+          {/* Notizen inline */}
+          <div className="grid gap-1.5">
+            <Label htmlFor="notes">Notizen</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => onNotesChange(e.target.value)}
+              placeholder="Zusätzliche Hinweise..."
+              rows={2}
+            />
+          </div>
         </CardContent>
       </Card>
 

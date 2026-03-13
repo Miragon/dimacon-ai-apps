@@ -227,12 +227,12 @@ function RectangularBreakdown({
       <p>Gewicht: {round3(volume)} m³ × {density} kg/m³ = {round1(weight)} kg</p>
       {calculation.segments > 1 && (
         <>
-          <p>Segmente: ⌈{round1(weight)} / {dimensions.maxSegmentWeight}⌉ = {calculation.segments}</p>
+          <p>Segmente: {calculation.horizontalCuts - 1} Reihen × {calculation.verticalCuts - 1} Spalten = {calculation.segments}</p>
           <p>Gewicht/Segment: {calculation.segmentWeight} kg</p>
         </>
       )}
-      <p className="mt-2">H-Schnitte: 2 (Basis){calculation.segments > 1 ? ` + ${calculation.segments - 1} (Teilung)` : ""} = {calculation.horizontalCuts}</p>
-      <p>V-Schnitte: {calculation.verticalCuts}</p>
+      <p className="mt-2">H-Schnitte: {calculation.horizontalCuts} ({calculation.horizontalCuts - 2 > 0 ? `2 Basis + ${calculation.horizontalCuts - 2} Teilung` : "2 Basis"})</p>
+      <p>V-Schnitte: {calculation.verticalCuts} ({calculation.verticalCuts - 2 > 0 ? `2 Basis + ${calculation.verticalCuts - 2} Teilung` : "2 Basis"})</p>
       <p>Laufmeter: ({calculation.horizontalCuts}×{wM} + {calculation.verticalCuts}×{hM}){sideFactor > 1 ? ` × ${sideFactor} (beidseitig)` : ""} = {round2(totalLm)} m</p>
       <p className="mt-2">Sägezeit: {round2(totalLm)} m × {timePerMeter} min/m = {sawTime} min</p>
       {calculation.cornerBoreHoles > 0 && (
@@ -279,11 +279,11 @@ function ResultItem({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border p-3">
+    <div className="flex items-center gap-2 rounded-lg border p-2">
       <div className="text-muted-foreground">{icon}</div>
       <div>
         <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="text-lg font-semibold">{value}</p>
+        <p className="text-base font-semibold">{value}</p>
       </div>
     </div>
   );

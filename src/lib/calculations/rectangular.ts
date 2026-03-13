@@ -3,6 +3,71 @@ import { needsCutFromBothSides, calculateSegmentWeight, MAX_SEGMENT_WEIGHT } fro
 import { suggestBladeDiameter } from "./blade-suggestion";
 import { estimateWallSawTime } from "./time-estimation";
 
+/** Generate cut lines for SVG preview based on cut counts. */
+export function generateCutLines(
+  widthMm: number,
+  heightMm: number,
+  horizontalCuts: number,
+  verticalCuts: number,
+  cutFromBothSides: boolean
+): CutLine[] {
+  const lines: CutLine[] = [];
+  const rows = Math.max(1, horizontalCuts - 1);
+  const cols = Math.max(1, verticalCuts - 1);
+
+  // Horizontal lines (top, intermediate, bottom)
+  for (let i = 0; i <= rows; i++) {
+    const y = (heightMm * i) / rows;
+    const label = i === 0 ? "Oben" : i === rows ? "Unten" : `H-Teilung ${i}`;
+    lines.push({ x1: 0, y1: y, x2: widthMm, y2: y, label, side: "front" });
+  }
+
+  // Vertical lines (left, intermediate, right)
+  for (let i = 0; i <= cols; i++) {
+    const x = (widthMm * i) / cols;
+    const label = i === 0 ? "Links" : i === cols ? "Rechts" : `V-Teilung ${i}`;
+    lines.push({ x1: x, y1: 0, x2: x, y2: heightMm, label, side: "front" });
+  }
+
+  if (cutFromBothSides) {
+    const frontLines = [...lines];
+    for (const line of frontLines) {
+      lines.push({ ...line, side: "back" });
+    }
+  }
+
+  return lines;
+}
+
+/** Generate bore hole positions at all cut intersection points. */
+export function generateBoreHolePositions(
+  widthMm: number,
+  heightMm: number,
+  horizontalCuts: number,
+  verticalCuts: number
+): BoreHolePosition[] {
+  const positions: BoreHolePosition[] = [];
+  const drillDiam = 50;
+  const rows = Math.max(1, horizontalCuts - 1);
+  const cols = Math.max(1, verticalCuts - 1);
+
+  for (let hi = 0; hi <= rows; hi++) {
+    for (let vi = 0; vi <= cols; vi++) {
+      const y = (heightMm * hi) / rows;
+      const x = (widthMm * vi) / cols;
+      let label: string;
+      if (hi === 0 && vi === 0) label = "Ecke OL";
+      else if (hi === 0 && vi === cols) label = "Ecke OR";
+      else if (hi === rows && vi === 0) label = "Ecke UL";
+      else if (hi === rows && vi === cols) label = "Ecke UR";
+      else label = `Bohrung ${positions.length + 1}`;
+      positions.push({ x, y, diameter: drillDiam, label });
+    }
+  }
+
+  return positions;
+}
+
 export function calculateRectangularOpening(
   widthMm: number,
   heightMm: number,
@@ -25,9 +90,12 @@ export function calculateRectangularOpening(
   let segments = 1;
 
   if (totalWeight > maxSegmentWeight) {
-    segments = Math.ceil(totalWeight / maxSegmentWeight);
-    // Add intermediate horizontal cuts for segmentation
-    horizontalCuts += segments - 1;
+    const totalSegmentsNeeded = Math.ceil(totalWeight / maxSegmentWeight);
+    const rows = Math.ceil(Math.sqrt(totalSegmentsNeeded));
+    const cols = Math.ceil(totalSegmentsNeeded / rows);
+    horizontalCuts = 2 + (rows - 1);
+    verticalCuts = 2 + (cols - 1);
+    segments = rows * cols;
   }
 
   const totalCuts = horizontalCuts + verticalCuts;
@@ -41,54 +109,16 @@ export function calculateRectangularOpening(
   const sideFactor = cutFromBothSides ? 2 : 1;
   totalLinearMeters *= sideFactor;
 
-  // Corner bore holes (4 corners - saw blade can't reach)
-  const cornerBoreHoles = 4;
+  // Bore holes at all intersection points of cut lines
+  const cornerBoreHoles = horizontalCuts * verticalCuts;
 
   // Time estimation
   const estimatedMinutes = estimateWallSawTime(totalLinearMeters, material) +
     cornerBoreHoles * 5; // ~5 min per bore hole
 
-  // Generate cut lines for SVG preview
-  const cutLines: CutLine[] = [];
-
-  // Top cut
-  cutLines.push({ x1: 0, y1: 0, x2: widthMm, y2: 0, label: "Oben", side: "front" });
-  // Bottom cut
-  cutLines.push({ x1: 0, y1: heightMm, x2: widthMm, y2: heightMm, label: "Unten", side: "front" });
-  // Left cut
-  cutLines.push({ x1: 0, y1: 0, x2: 0, y2: heightMm, label: "Links", side: "front" });
-  // Right cut
-  cutLines.push({ x1: widthMm, y1: 0, x2: widthMm, y2: heightMm, label: "Rechts", side: "front" });
-
-  // Segmentation cuts
-  if (segments > 1) {
-    const segHeight = heightMm / segments;
-    for (let i = 1; i < segments; i++) {
-      cutLines.push({
-        x1: 0,
-        y1: segHeight * i,
-        x2: widthMm,
-        y2: segHeight * i,
-        label: `Teilung ${i}`,
-        side: "front",
-      });
-    }
-  }
-
-  if (cutFromBothSides) {
-    cutLines.forEach((line) => {
-      cutLines.push({ ...line, side: "back" as const });
-    });
-  }
-
-  // Bore hole positions (at corners)
-  const drillDiam = 50; // default corner drill diameter
-  const boreHolePositions: BoreHolePosition[] = [
-    { x: 0, y: 0, diameter: drillDiam, label: "Ecke OL" },
-    { x: widthMm, y: 0, diameter: drillDiam, label: "Ecke OR" },
-    { x: 0, y: heightMm, diameter: drillDiam, label: "Ecke UL" },
-    { x: widthMm, y: heightMm, diameter: drillDiam, label: "Ecke UR" },
-  ];
+  // Generate cut lines and bore hole positions for SVG preview
+  const cutLines = generateCutLines(widthMm, heightMm, horizontalCuts, verticalCuts, cutFromBothSides);
+  const boreHolePositions = generateBoreHolePositions(widthMm, heightMm, horizontalCuts, verticalCuts);
 
   return {
     horizontalCuts,
