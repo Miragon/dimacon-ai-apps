@@ -23,16 +23,16 @@ export function calculateUeberschnittA(
 }
 
 /**
- * Geometrischer Überschnitt Variante B (flach eingestochen).
+ * Geometrischer Überschnitt Variante B (bis Wandstärke eingestochen).
  * Halbsehnen-Formel: Ü_B = sqrt(2·r·dEff - dEff²)
- * r = effektiver Blattradius (bladeDiameter/2 - FLANSCH_DISTANCE)
+ * r = voller Blattradius (bladeDiameter/2)
  */
 export function calculateUeberschnittB(
   wallThickness: number,
   bladeDiameter: number,
   cutFromBothSides: boolean
 ): number {
-  const r = bladeDiameter / 2 - FLANSCH_DISTANCE;
+  const r = bladeDiameter / 2;
   const dEff = cutFromBothSides ? wallThickness / 2 : wallThickness;
 
   const inner = 2 * r * dEff - dEff * dEff;
@@ -42,20 +42,14 @@ export function calculateUeberschnittB(
 }
 
 /**
- * Automatische Varianten-Bestimmung basierend auf Einstechtiefe.
- * einstechtiefe + boreRadius >= dEff → Variante A (1 Bohrung/Ecke reicht)
- * einstechtiefe + boreRadius < dEff → Variante B (2 Bohrungen/Ecke nötig)
+ * Varianten-Bestimmung basierend auf Einstechtiefe-Option.
+ * "maximal" → Variante A (1 Bohrung/Ecke)
+ * "wandstaerke" → Variante B (2 Bohrungen/Ecke)
  */
 export function determineCornerVariant(
-  einstechtiefe: number,
-  wallThickness: number,
-  boreHoleDiameter: number,
-  cutFromBothSides: boolean
+  einstechtiefe: "maximal" | "wandstaerke"
 ): "A" | "B" {
-  const dEff = cutFromBothSides ? wallThickness / 2 : wallThickness;
-  const boreRadius = boreHoleDiameter / 2;
-
-  return einstechtiefe + boreRadius >= dEff ? "A" : "B";
+  return einstechtiefe === "wandstaerke" ? "B" : "A";
 }
 
 /**

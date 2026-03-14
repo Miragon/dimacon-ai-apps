@@ -1,5 +1,5 @@
 import type { MaterialType, CalculationResult, CutLine, DisabledSides } from "@/types";
-import { needsCutFromBothSides, calculateSegmentWeight, calculateOverlap, calculateMaxCutDepth, MAX_SEGMENT_WEIGHT } from "./common";
+import { needsCutFromBothSides, calculateSegmentWeight, calculateOverlap, MAX_SEGMENT_WEIGHT } from "./common";
 import { suggestBladeDiameter } from "./blade-suggestion";
 import { estimateWallSawTime } from "./time-estimation";
 import {
@@ -67,24 +67,15 @@ export function calculateRectangularOpening(
   bladeDiameter: number,
   maxSegmentWeight: number = MAX_SEGMENT_WEIGHT,
   disabledSides?: DisabledSides,
-  einstechtiefe?: number,
+  einstechtiefe: "maximal" | "wandstaerke" = "maximal",
   boreHoleDiameter: number = 200
 ): CalculationResult {
   const suggestedBladeSize = suggestBladeDiameter(wallThickness);
   const effectiveBlade = Math.max(bladeDiameter, suggestedBladeSize);
   const cutFromBothSides = needsCutFromBothSides(wallThickness, effectiveBlade);
 
-  // Einstechtiefe: default = maxCutDepth (Variante A, abwärtskompatibel)
-  const maxCutDepth = calculateMaxCutDepth(effectiveBlade);
-  const effectiveEinstechtiefe = einstechtiefe ?? maxCutDepth;
-
   // Variante bestimmen und Überschnitt berechnen
-  const cornerVariant = determineCornerVariant(
-    effectiveEinstechtiefe,
-    wallThickness,
-    boreHoleDiameter,
-    cutFromBothSides
-  );
+  const cornerVariant = determineCornerVariant(einstechtiefe);
   const ueberschnitt = Math.round(
     (cornerVariant === "A"
       ? calculateUeberschnittA(wallThickness, effectiveBlade, cutFromBothSides)

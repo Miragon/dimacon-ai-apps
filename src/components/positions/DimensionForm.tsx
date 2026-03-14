@@ -1,8 +1,7 @@
 import type { PositionType, MaterialType, Dimensions } from "@/types";
 import { MATERIAL_LABELS } from "@/types";
-import { MATERIAL_DENSITY } from "@/lib/calculations/common";
+import { MATERIAL_DENSITY, calculateMaxCutDepth } from "@/lib/calculations/common";
 import { suggestBladeDiameter } from "@/lib/calculations/blade-suggestion";
-import { calculateMaxCutDepth } from "@/lib/calculations/common";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,7 +30,7 @@ export function DimensionForm({
   onLabelChange,
   onSubmit,
 }: DimensionFormProps) {
-  const updateDim = (key: keyof Dimensions, value: number | undefined) => {
+  const updateDim = (key: keyof Dimensions, value: number | string | undefined) => {
     onDimensionsChange({ ...dimensions, [key]: value });
   };
 
@@ -155,9 +154,7 @@ export function DimensionForm({
                 id="bladeDiameter"
                 value={dimensions.bladeDiameter ?? ""}
                 onChange={(e) => {
-                  const newBlade = e.target.value ? Number(e.target.value) : undefined;
-                  const newMax = Math.round(calculateMaxCutDepth(newBlade ?? 0));
-                  onDimensionsChange({ ...dimensions, bladeDiameter: newBlade, einstechtiefe: newMax });
+                  onDimensionsChange({ ...dimensions, bladeDiameter: Number(e.target.value) });
                 }}
                 className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
               >
@@ -174,26 +171,23 @@ export function DimensionForm({
               )}
             </div>
             {(() => {
-              const maxCutDepth = calculateMaxCutDepth(dimensions.bladeDiameter ?? 0);
+              const maxDepth = Math.round(calculateMaxCutDepth(dimensions.bladeDiameter ?? 0));
               return (
                 <div className="grid gap-1.5">
                   <Label htmlFor="einstechtiefe">
-                    Einstechtiefe <span className="text-muted-foreground text-xs">(mm)</span>
+                    Einstechtiefe
                   </Label>
-                  <Input
+                  <select
                     id="einstechtiefe"
-                    type="number"
-                    value={dimensions.einstechtiefe ?? ""}
+                    value={dimensions.einstechtiefe ?? "maximal"}
                     onChange={(e) =>
-                      updateDim("einstechtiefe", e.target.value ? Number(e.target.value) : undefined)
+                      updateDim("einstechtiefe", e.target.value as "maximal" | "wandstaerke")
                     }
-                    placeholder={`max. ${Math.round(maxCutDepth)} mm`}
-                    min={0}
-                    max={Math.round(maxCutDepth)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Max. {Math.round(maxCutDepth)} mm
-                  </p>
+                    className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                  >
+                    <option value="maximal">Maximal ({maxDepth} mm)</option>
+                    <option value="wandstaerke">Bis Wandstärke ({dimensions.wallThickness ?? 0} mm)</option>
+                  </select>
                 </div>
               );
             })()}

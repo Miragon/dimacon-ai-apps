@@ -29,7 +29,7 @@ export interface Dimensions {
   bladeDiameter: number;
   maxSegmentWeight?: number; // kg – max weight per individual piece, defaults to 150
   disabledSides?: DisabledSides;
-  einstechtiefe?: number; // mm – Einstechtiefe des Blatts an Ecken
+  einstechtiefe?: "maximal" | "wandstaerke"; // Einstechtiefe-Variante
   boreHoleDiameter?: number; // mm – Bohrdurchmesser, default 200
 }
 

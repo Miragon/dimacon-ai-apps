@@ -14,7 +14,7 @@ export interface UrlPosition {
   d?: number; // diameter (circular)
   b: number; // bladeDiameter (mm)
   sw?: number; // maxSegmentWeight (kg)
-  et?: number; // einstechtiefe (mm)
+  et?: string; // einstechtiefe: "m" = maximal, "w" = wandstaerke
   bd?: number; // boreHoleDiameter (mm)
   ds?: string; // disabledSides as "0110" bitmask (top,bottom,left,right)
   nt?: string; // notes
@@ -114,7 +114,9 @@ export function positionToUrlPos(p: Position): UrlPosition {
   if (p.dimensions.maxSegmentWeight != null && p.dimensions.maxSegmentWeight !== 150) {
     up.sw = p.dimensions.maxSegmentWeight;
   }
-  if (p.dimensions.einstechtiefe != null) up.et = p.dimensions.einstechtiefe;
+  if (p.dimensions.einstechtiefe && p.dimensions.einstechtiefe !== "maximal") {
+    up.et = p.dimensions.einstechtiefe === "wandstaerke" ? "w" : "m";
+  }
   if (p.dimensions.boreHoleDiameter != null && p.dimensions.boreHoleDiameter !== 200) {
     up.bd = p.dimensions.boreHoleDiameter;
   }
@@ -140,7 +142,7 @@ export function urlPosToPosition(up: UrlPosition, index: number): Position {
       diameter: up.d,
       bladeDiameter: up.b,
       maxSegmentWeight: up.sw ?? 150,
-      einstechtiefe: up.et,
+      einstechtiefe: up.et === "w" ? "wandstaerke" : typeof up.et === "number" ? "maximal" : up.et === "m" ? "maximal" : undefined,
       boreHoleDiameter: up.bd ?? 200,
       disabledSides: bitmaskToDisabledSides(up.ds),
     },
