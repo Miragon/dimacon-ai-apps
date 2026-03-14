@@ -110,6 +110,7 @@ export function generateBoreHolePositions(params: {
       const isCorner = (isTop || isBottom) && (isLeft || isRight);
 
       if (isCorner) {
+        // Ecke: 2 Schnittlinien treffen sich → 1 geteilte Eck-Bohrung + extras auf H + V
         const cornerLabel = getCornerLabel(isTop, isLeft);
         const cornerX = isLeft ? drillRadius : widthMm - drillRadius;
         const cornerY = isTop ? drillRadius : heightMm - drillRadius;
@@ -144,18 +145,39 @@ export function generateBoreHolePositions(params: {
           });
         }
       } else {
-        // Rand-Position (nicht Ecke): 1 Bohrung
+        // Rand-Position (nicht Ecke): 1 Schnittlinie trifft auf Außenkante
         const rawY = (heightMm * hi) / rows;
         const rawX = (widthMm * vi) / cols;
-        const x = Math.max(drillRadius, Math.min(widthMm - drillRadius, rawX));
-        const y = Math.max(drillRadius, Math.min(heightMm - drillRadius, rawY));
+        const baseX = Math.max(drillRadius, Math.min(widthMm - drillRadius, rawX));
+        const baseY = Math.max(drillRadius, Math.min(heightMm - drillRadius, rawY));
+        const baseLabel = `Bohrung ${positions.length + 1}`;
 
-        positions.push({
-          x,
-          y,
-          diameter: drillDiam,
-          label: `Bohrung ${positions.length + 1}`,
-        });
+        // Richtung: Schnittlinie verläuft senkrecht zur Außenkante
+        // H-Schnitt trifft links/rechts → Bohrungen entlang x
+        // V-Schnitt trifft oben/unten → Bohrungen entlang y
+        if (isLeft || isRight) {
+          // H-Schnitt trifft linke/rechte Kante
+          const dir = isLeft ? 1 : -1;
+          for (let i = 0; i < boresPerLine; i++) {
+            positions.push({
+              x: baseX + i * drillDiam * dir,
+              y: baseY,
+              diameter: drillDiam,
+              label: i === 0 ? baseLabel : `${baseLabel}.${i + 1}`,
+            });
+          }
+        } else {
+          // V-Schnitt trifft obere/untere Kante
+          const dir = isTop ? 1 : -1;
+          for (let i = 0; i < boresPerLine; i++) {
+            positions.push({
+              x: baseX,
+              y: baseY + i * drillDiam * dir,
+              diameter: drillDiam,
+              label: i === 0 ? baseLabel : `${baseLabel}.${i + 1}`,
+            });
+          }
+        }
       }
     }
   }
