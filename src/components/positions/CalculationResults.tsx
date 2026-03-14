@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Scissors, Ruler, Clock, Circle, Layers, ArrowLeftRight, Weight, Square, EyeOff } from "lucide-react";
+import { Scissors, Ruler, Clock, Circle, Layers, ArrowLeftRight, Weight, Square, EyeOff, Crosshair } from "lucide-react";
 
 interface CalculationResultsProps {
   calculation: CalculationResult;
@@ -93,6 +93,13 @@ export function CalculationResults({
             label="Eckbohrungen"
             value={String(calculation.cornerBoreHoles)}
           />
+          {calculation.ueberschnitt > 0 && (
+            <ResultItem
+              icon={<Crosshair className="h-4 w-4" />}
+              label="Überschnitt (eff.)"
+              value={`${calculation.ueberschnitt} mm`}
+            />
+          )}
         </div>
 
         {/* Weight section for rectangular openings */}
@@ -135,6 +142,12 @@ export function CalculationResults({
               <span>{calculation.overlap} mm</span>
             </div>
           )}
+          {calculation.ueberschnitt > 0 && (
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Überschnitt (effektiv)</span>
+              <span>{calculation.ueberschnitt} mm</span>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Material</span>
             <span>{MATERIAL_LABELS[material]}</span>
@@ -142,6 +155,12 @@ export function CalculationResults({
         </div>
 
         <div className="flex flex-wrap gap-2">
+          {calculation.cornerVariant && (
+            <Badge variant={calculation.cornerVariant === "B" ? "default" : "secondary"} className="text-xs">
+              <Circle className="mr-1 h-3 w-3" />
+              Variante {calculation.cornerVariant} ({calculation.cornerVariant === "A" ? "1 Bohrung/Ecke" : "2 Bohrungen/Ecke"})
+            </Badge>
+          )}
           {calculation.cutFromBothSides && (
             <Badge variant="secondary" className="text-xs">
               <ArrowLeftRight className="mr-1 h-3 w-3" />

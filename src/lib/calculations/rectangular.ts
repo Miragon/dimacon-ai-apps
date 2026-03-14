@@ -1,7 +1,14 @@
-import type { MaterialType, CalculationResult, CutLine, BoreHolePosition, DisabledSides } from "@/types";
-import { needsCutFromBothSides, calculateSegmentWeight, calculateOverlap, MAX_SEGMENT_WEIGHT } from "./common";
+import type { MaterialType, CalculationResult, CutLine, DisabledSides } from "@/types";
+import { needsCutFromBothSides, calculateSegmentWeight, calculateOverlap, calculateMaxCutDepth, MAX_SEGMENT_WEIGHT } from "./common";
 import { suggestBladeDiameter } from "./blade-suggestion";
 import { estimateWallSawTime } from "./time-estimation";
+import {
+  generateBoreHolePositions,
+  calculateUeberschnittA,
+  calculateUeberschnittB,
+  calculateEffectiveUeberschnitt,
+  determineCornerVariant,
+} from "./ueberschnitt";
 
 const SIDE_LABEL_MAP: Record<string, keyof DisabledSides> = {
   "Oben": "top",
@@ -51,54 +58,7 @@ export function generateCutLines(
   return lines;
 }
 
-/** Generate bore hole positions at all cut intersection points. */
-export function generateBoreHolePositions(
-  widthMm: number,
-  heightMm: number,
-  horizontalCuts: number,
-  verticalCuts: number,
-  disabledSides?: DisabledSides
-): BoreHolePosition[] {
-  const positions: BoreHolePosition[] = [];
-  const drillDiam = 50;
-  const rows = Math.max(1, horizontalCuts - 1);
-  const cols = Math.max(1, verticalCuts - 1);
-
-  for (let hi = 0; hi <= rows; hi++) {
-    for (let vi = 0; vi <= cols; vi++) {
-      // Nur Rand-Positionen – interne Kreuzungen brauchen keine Bohrung
-      if (hi > 0 && hi < rows && vi > 0 && vi < cols) continue;
-      const rawY = (heightMm * hi) / rows;
-      const rawX = (widthMm * vi) / cols;
-      const drillRadius = drillDiam / 2;
-      const x = Math.max(drillRadius, Math.min(widthMm - drillRadius, rawX));
-      const y = Math.max(drillRadius, Math.min(heightMm - drillRadius, rawY));
-
-      const isTop = hi === 0;
-      const isBottom = hi === rows;
-      const isLeft = vi === 0;
-      const isRight = vi === cols;
-
-      // Bohrungen auf deaktivierten Seiten überspringen
-      if (disabledSides) {
-        if (isTop && disabledSides.top) continue;
-        if (isBottom && disabledSides.bottom) continue;
-        if (isLeft && disabledSides.left) continue;
-        if (isRight && disabledSides.right) continue;
-      }
-
-      let label: string;
-      if (isTop && isLeft) label = "Ecke OL";
-      else if (isTop && isRight) label = "Ecke OR";
-      else if (isBottom && isLeft) label = "Ecke UL";
-      else if (isBottom && isRight) label = "Ecke UR";
-      else label = `Bohrung ${positions.length + 1}`;
-      positions.push({ x, y, diameter: drillDiam, label });
-    }
-  }
-
-  return positions;
-}
+export { generateBoreHolePositions } from "./ueberschnitt";
 
 export function calculateRectangularOpening(
   widthMm: number,
@@ -107,11 +67,31 @@ export function calculateRectangularOpening(
   material: MaterialType,
   bladeDiameter: number,
   maxSegmentWeight: number = MAX_SEGMENT_WEIGHT,
-  disabledSides?: DisabledSides
+  disabledSides?: DisabledSides,
+  einstechtiefe?: number,
+  boreHoleDiameter: number = 200
 ): CalculationResult {
   const suggestedBladeSize = suggestBladeDiameter(wallThickness);
   const effectiveBlade = Math.max(bladeDiameter, suggestedBladeSize);
   const cutFromBothSides = needsCutFromBothSides(wallThickness, effectiveBlade);
+
+  // Einstechtiefe: default = maxCutDepth (Variante A, abwärtskompatibel)
+  const maxCutDepth = calculateMaxCutDepth(effectiveBlade);
+  const effectiveEinstechtiefe = einstechtiefe ?? maxCutDepth;
+
+  // Variante bestimmen und Überschnitt berechnen
+  const cornerVariant = determineCornerVariant(
+    effectiveEinstechtiefe,
+    wallThickness,
+    boreHoleDiameter,
+    cutFromBothSides
+  );
+  const geometricUeberschnitt = cornerVariant === "A"
+    ? calculateUeberschnittA(wallThickness, effectiveBlade, cutFromBothSides)
+    : calculateUeberschnittB(wallThickness, effectiveBlade, cutFromBothSides);
+  const ueberschnitt = Math.round(
+    calculateEffectiveUeberschnitt(geometricUeberschnitt, boreHoleDiameter) * 10
+  ) / 10;
 
   // Base cuts: 2 horizontal (top + bottom) + 2 vertical (left + right)
   let horizontalCuts = 2;
@@ -149,7 +129,15 @@ export function calculateRectangularOpening(
 
   // Generate cut lines and bore hole positions for SVG preview
   const cutLines = generateCutLines(widthMm, heightMm, horizontalCuts, verticalCuts, cutFromBothSides, disabledSides);
-  const boreHolePositions = generateBoreHolePositions(widthMm, heightMm, horizontalCuts, verticalCuts, disabledSides);
+  const boreHolePositions = generateBoreHolePositions({
+    widthMm,
+    heightMm,
+    horizontalCuts,
+    verticalCuts,
+    cornerVariant,
+    boreHoleDiameter,
+    disabledSides,
+  });
 
   const cornerBoreHoles = boreHolePositions.length;
 
@@ -182,5 +170,7 @@ export function calculateRectangularOpening(
     segmentWeight: Math.round((totalWeight / segments) * 10) / 10,
     overlap,
     cutSurfaceArea,
+    ueberschnitt,
+    cornerVariant,
   };
 }

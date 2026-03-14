@@ -2,6 +2,7 @@ import type { PositionType, MaterialType, Dimensions } from "@/types";
 import { MATERIAL_LABELS } from "@/types";
 import { MATERIAL_DENSITY } from "@/lib/calculations/common";
 import { suggestBladeDiameter } from "@/lib/calculations/blade-suggestion";
+import { calculateMaxCutDepth, needsCutFromBothSides } from "@/lib/calculations/common";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -149,8 +150,8 @@ export function DimensionForm({
             </div>
           </div>
 
-          {/* Blattdurchmesser + Notizen */}
-          <div className="grid gap-4 sm:grid-cols-2">
+          {/* Blattdurchmesser + Einstechtiefe + Bohrdurchmesser + Notizen */}
+          <div className="grid gap-4 sm:grid-cols-4">
             <div className="grid gap-1.5">
               <Label htmlFor="bladeDiameter">
                 Blattdurchmesser <span className="text-muted-foreground text-xs">(mm)</span>
@@ -174,6 +175,57 @@ export function DimensionForm({
                   Empfohlen: {suggestBladeDiameter(dimensions.wallThickness)} mm
                 </p>
               )}
+            </div>
+            {(() => {
+              const effectiveBlade = Math.max(
+                dimensions.bladeDiameter,
+                dimensions.wallThickness > 0 ? suggestBladeDiameter(dimensions.wallThickness) : 0
+              );
+              const maxCutDepth = calculateMaxCutDepth(effectiveBlade);
+              return (
+                <div className="grid gap-1.5">
+                  <Label htmlFor="einstechtiefe">
+                    Einstechtiefe <span className="text-muted-foreground text-xs">(mm)</span>
+                  </Label>
+                  <Input
+                    id="einstechtiefe"
+                    type="number"
+                    value={dimensions.einstechtiefe ?? ""}
+                    onChange={(e) =>
+                      updateDim("einstechtiefe", e.target.value ? Number(e.target.value) : undefined)
+                    }
+                    placeholder={`max. ${Math.round(maxCutDepth)} mm`}
+                    min={0}
+                    max={Math.round(maxCutDepth)}
+                  />
+                  {dimensions.einstechtiefe != null && dimensions.wallThickness > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {dimensions.einstechtiefe >= (needsCutFromBothSides(dimensions.wallThickness, effectiveBlade) ? dimensions.wallThickness / 2 : dimensions.wallThickness) - 25
+                        ? "Variante A (1 Bohrung/Ecke)"
+                        : "Variante B (2 Bohrungen/Ecke)"}
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
+            <div className="grid gap-1.5">
+              <Label htmlFor="boreHoleDiameter">
+                Bohrdurchmesser <span className="text-muted-foreground text-xs">(mm)</span>
+              </Label>
+              <select
+                id="boreHoleDiameter"
+                value={dimensions.boreHoleDiameter ?? 200}
+                onChange={(e) =>
+                  updateDim("boreHoleDiameter", Number(e.target.value))
+                }
+                className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+              >
+                {[100, 150, 200, 250].map((size) => (
+                  <option key={size} value={size}>
+                    {size} mm
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="notes">Notizen</Label>

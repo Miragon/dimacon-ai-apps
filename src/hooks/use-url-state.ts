@@ -10,7 +10,8 @@ import {
   type UrlState,
 } from "@/lib/url-state";
 import { calculatePosition } from "@/lib/calculations";
-import { generateCutLines, generateBoreHolePositions } from "@/lib/calculations/rectangular";
+import { generateCutLines } from "@/lib/calculations/rectangular";
+import { generateBoreHolePositions } from "@/lib/calculations/ueberschnitt";
 import type { Position, CalculationResult } from "@/types";
 import type { PositionTemplate } from "@/lib/templates";
 
@@ -28,7 +29,15 @@ function hydratePositions(state: UrlState): Position[] {
         ? generateCutLines(w, h, stored.horizontalCuts, stored.verticalCuts, stored.cutFromBothSides, ds)
         : [];
       const boreHolePositions = pos.shape === "rectangular"
-        ? generateBoreHolePositions(w, h, stored.horizontalCuts, stored.verticalCuts, ds)
+        ? generateBoreHolePositions({
+            widthMm: w,
+            heightMm: h,
+            horizontalCuts: stored.horizontalCuts,
+            verticalCuts: stored.verticalCuts,
+            cornerVariant: stored.cornerVariant ?? "A",
+            boreHoleDiameter: pos.dimensions.boreHoleDiameter ?? 200,
+            disabledSides: ds,
+          })
         : [];
       pos.calculation = { ...stored, cutLines, boreHolePositions } as CalculationResult;
     } else {

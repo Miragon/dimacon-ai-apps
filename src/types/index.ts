@@ -29,6 +29,8 @@ export interface Dimensions {
   bladeDiameter: number;
   maxSegmentWeight?: number; // kg – max weight per individual piece, defaults to 150
   disabledSides?: DisabledSides;
+  einstechtiefe?: number; // mm – Einstechtiefe des Blatts an Ecken
+  boreHoleDiameter?: number; // mm – Bohrdurchmesser, default 200
 }
 
 export interface CutLine {
@@ -64,6 +66,8 @@ export interface CalculationResult {
   segmentWeight: number;  // Gewicht pro Segment in kg
   overlap: number;        // Berechnete Überlappung in mm
   cutSurfaceArea: number; // Schnittfläche in m²
+  ueberschnitt: number;   // Effektiver Überschnitt in mm
+  cornerVariant: "A" | "B"; // A = 1 Bohrung/Ecke, B = 2 Bohrungen/Ecke
 }
 
 // Labels for UI display (German)
