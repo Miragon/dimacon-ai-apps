@@ -89,7 +89,9 @@ export function useUrlState() {
       };
       const params = new URLSearchParams();
       params.set("s", encodeState(newState));
-      setSearchParams(params);
+      // Switch to editing the newly created position by index
+      params.set("e", String(state.p.length));
+      setSearchParams(params, { replace: true });
     },
     [state, setSearchParams]
   );

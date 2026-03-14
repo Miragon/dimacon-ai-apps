@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Download, ArrowLeft, Trash2, RefreshCw, Save } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Plus, Download, ArrowLeft, Trash2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,8 +45,8 @@ export function MainPage() {
       <PositionEditor
         editIndex={editIndex}
         positions={positions}
-        onSaveNew={addPosition}
-        onSaveExisting={updatePosition}
+        onAdd={addPosition}
+        onUpdate={updatePosition}
         onDelete={deletePosition}
         onBack={closeEditor}
       />
@@ -220,20 +220,20 @@ function TemplateCard({ template }: { template: (typeof TEMPLATES)[number] }) {
 function PositionEditor({
   editIndex,
   positions,
-  onSaveNew,
-  onSaveExisting,
+  onAdd,
+  onUpdate,
   onDelete,
   onBack,
 }: {
   editIndex: number | "new";
   positions: Position[];
-  onSaveNew: (position: Position) => void;
-  onSaveExisting: (index: number, position: Position) => void;
+  onAdd: (position: Position) => void;
+  onUpdate: (index: number, position: Position) => void;
   onDelete: (index: number) => void;
   onBack: () => void;
 }) {
-  const isEditMode = editIndex !== "new";
-  const existingPosition = isEditMode ? positions[editIndex] : undefined;
+  const isNew = editIndex === "new";
+  const existingPosition = !isNew ? positions[editIndex] : undefined;
 
   const shape = "rectangular" as const;
   const positionType = "wanddurchbruch" as const;
@@ -252,14 +252,17 @@ function PositionEditor({
   const [notes, setNotes] = useState(existingPosition?.notes ?? "");
   const [calculation, setCalculation] = useState<CalculationResult>(() => {
     if (existingPosition?.calculation) return existingPosition.calculation;
-    // First time: calculate initial values
     const tempPos: Position = {
       id: "temp",
       type: positionType,
-      label: label || "Vorschau",
+      label: "",
       shape,
-      dimensions,
-      material,
+      dimensions: existingPosition?.dimensions ?? {
+        wallThickness: 240,
+        bladeDiameter: 600,
+        maxSegmentWeight: 150,
+      },
+      material: existingPosition?.material ?? "beton",
       calculation: null,
       notes: "",
       sortOrder: positions.length,
@@ -267,7 +270,50 @@ function PositionEditor({
     return calculatePosition(tempPos);
   });
 
-  if (isEditMode && !existingPosition) {
+  // Auto-save: persist to URL on every change
+  const isFirstRender = useRef(true);
+  const hasCreated = useRef(false);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      // For new positions: create immediately on first render
+      if (isNew && !hasCreated.current) {
+        hasCreated.current = true;
+        const position: Position = {
+          id: crypto.randomUUID(),
+          type: positionType,
+          label: label || `Wanddurchbruch ${positions.length + 1}`,
+          shape,
+          dimensions,
+          material,
+          calculation,
+          notes,
+          sortOrder: positions.length,
+        };
+        onAdd(position);
+      }
+      return;
+    }
+
+    // Existing position: auto-save on every change
+    if (!isNew && existingPosition) {
+      const position: Position = {
+        id: existingPosition.id,
+        type: positionType,
+        label: label || existingPosition.label,
+        shape,
+        dimensions,
+        material,
+        calculation,
+        notes,
+        sortOrder: existingPosition.sortOrder,
+      };
+      onUpdate(editIndex, position);
+    }
+  }, [material, label, dimensions, notes, calculation]);
+
+  if (!isNew && !existingPosition) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <p className="text-muted-foreground">Position nicht gefunden</p>
@@ -294,26 +340,19 @@ function PositionEditor({
   const handleToggleSide = (side: keyof DisabledSides) => {
     const newDs = { ...dimensions.disabledSides };
     newDs[side] = !newDs[side];
-    setDimensions((prev) => ({ ...prev, disabledSides: newDs }));
+    const newDimensions = { ...dimensions, disabledSides: newDs };
+    setDimensions(newDimensions);
 
     const recalculated = recalculateFromEdit(
       calculation,
       "horizontalCuts",
       calculation.horizontalCuts,
-      { ...dimensions, disabledSides: newDs },
+      newDimensions,
       material,
       positionType,
       shape
     );
     setCalculation(recalculated);
-  };
-
-  const handleDimensionsChange = (dims: Dimensions) => {
-    setDimensions(dims);
-  };
-
-  const handleMaterialChange = (mat: MaterialType) => {
-    setMaterial(mat);
   };
 
   const handleRecalculate = () => {
@@ -331,32 +370,12 @@ function PositionEditor({
     setCalculation(calculatePosition(tempPos));
   };
 
-  const handleSave = () => {
-    if (!calculation) return;
-
-    const position: Position = {
-      id: existingPosition?.id ?? crypto.randomUUID(),
-      type: positionType,
-      label: label || `Wanddurchbruch ${positions.length + 1}`,
-      shape,
-      dimensions,
-      material,
-      calculation,
-      notes,
-      sortOrder: existingPosition?.sortOrder ?? positions.length,
-    };
-
-    if (isEditMode) {
-      onSaveExisting(editIndex, position);
-    } else {
-      onSaveNew(position);
-    }
-  };
-
   const handleDelete = () => {
-    if (!isEditMode) return;
+    if (isNew) return;
     onDelete(editIndex);
   };
+
+  const displayIndex = isNew ? positions.length : editIndex;
 
   return (
     <div className="space-y-4">
@@ -366,17 +385,13 @@ function PositionEditor({
         </Button>
         <div className="flex-1">
           <h1 className="text-2xl font-bold tracking-tight">
-            {isEditMode ? existingPosition!.label : "Neue Position"}
+            {!isNew && existingPosition ? existingPosition.label : "Neue Position"}
           </h1>
           <p className="text-muted-foreground">
-            {isEditMode ? `Position #${editIndex + 1}` : "Maße & Berechnung"}
+            Position #{displayIndex + 1}
           </p>
         </div>
-        <Button onClick={handleSave}>
-          <Save className="mr-2 h-4 w-4" />
-          {isEditMode ? "Speichern" : "Position speichern"}
-        </Button>
-        {isEditMode && (
+        {!isNew && (
           <Button variant="destructive" size="icon" onClick={handleDelete}>
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -386,9 +401,9 @@ function PositionEditor({
       <DimensionForm
         positionType={positionType}
         material={material}
-        onMaterialChange={handleMaterialChange}
+        onMaterialChange={setMaterial}
         dimensions={dimensions}
-        onDimensionsChange={handleDimensionsChange}
+        onDimensionsChange={setDimensions}
         label={label}
         onLabelChange={setLabel}
         notes={notes}
