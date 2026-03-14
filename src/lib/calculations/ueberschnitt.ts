@@ -60,15 +60,15 @@ export function determineCornerVariant(
 
 /**
  * Generiert Bohrungspositionen für alle Schnittkanten-Kreuzungen.
- * Variante A: 1 Bohrung pro Ecke
- * Variante B: 2 Bohrungen pro Ecke (auf den jeweiligen Schnittlinien)
+ * Anzahl pro Ecke ergibt sich dynamisch aus ceil(Überschnitt / Bohrdurchmesser):
+ *   1 Eck-Bohrung (geteilt für H+V) + (boresPerLine-1) auf H + (boresPerLine-1) auf V
  */
 export function generateBoreHolePositions(params: {
   widthMm: number;
   heightMm: number;
   horizontalCuts: number;
   verticalCuts: number;
-  cornerVariant: "A" | "B";
+  ueberschnitt: number;
   boreHoleDiameter: number;
   disabledSides?: DisabledSides;
 }): BoreHolePosition[] {
@@ -77,7 +77,7 @@ export function generateBoreHolePositions(params: {
     heightMm,
     horizontalCuts,
     verticalCuts,
-    cornerVariant,
+    ueberschnitt,
     boreHoleDiameter,
     disabledSides,
   } = params;
@@ -86,6 +86,8 @@ export function generateBoreHolePositions(params: {
   const drillRadius = drillDiam / 2;
   const rows = Math.max(1, horizontalCuts - 1);
   const cols = Math.max(1, verticalCuts - 1);
+
+  const boresPerLine = Math.max(1, Math.ceil(ueberschnitt / drillDiam));
 
   for (let hi = 0; hi <= rows; hi++) {
     for (let vi = 0; vi <= cols; vi++) {
@@ -107,48 +109,53 @@ export function generateBoreHolePositions(params: {
 
       const isCorner = (isTop || isBottom) && (isLeft || isRight);
 
-      if (isCorner && cornerVariant === "B") {
-        // Variante B: 2 Bohrungen pro Ecke
+      if (isCorner) {
         const cornerLabel = getCornerLabel(isTop, isLeft);
+        const cornerX = isLeft ? drillRadius : widthMm - drillRadius;
+        const cornerY = isTop ? drillRadius : heightMm - drillRadius;
+        const hDir = isLeft ? 1 : -1;
+        const vDir = isTop ? 1 : -1;
 
-        // Bohrung 1: auf horizontaler Schnittlinie
-        const h1x = isLeft
-          ? drillRadius + drillDiam
-          : widthMm - drillRadius - drillDiam;
-        const h1y = isTop ? drillRadius : heightMm - drillRadius;
+        // Eck-Bohrung (geteilt für H+V)
         positions.push({
-          x: h1x,
-          y: h1y,
+          x: cornerX,
+          y: cornerY,
           diameter: drillDiam,
-          label: `${cornerLabel} H`,
+          label: cornerLabel,
         });
 
-        // Bohrung 2: auf vertikaler Schnittlinie
-        const v2x = isLeft ? drillRadius : widthMm - drillRadius;
-        const v2y = isTop
-          ? drillRadius + drillDiam
-          : heightMm - drillRadius - drillDiam;
-        positions.push({
-          x: v2x,
-          y: v2y,
-          diameter: drillDiam,
-          label: `${cornerLabel} V`,
-        });
+        // Zusätzliche H-Bohrungen
+        for (let i = 1; i < boresPerLine; i++) {
+          positions.push({
+            x: cornerX + i * drillDiam * hDir,
+            y: cornerY,
+            diameter: drillDiam,
+            label: `${cornerLabel} H${i + 1}`,
+          });
+        }
+
+        // Zusätzliche V-Bohrungen
+        for (let i = 1; i < boresPerLine; i++) {
+          positions.push({
+            x: cornerX,
+            y: cornerY + i * drillDiam * vDir,
+            diameter: drillDiam,
+            label: `${cornerLabel} V${i + 1}`,
+          });
+        }
       } else {
-        // Variante A (1 Bohrung/Ecke) oder Rand-Position (nicht Ecke)
+        // Rand-Position (nicht Ecke): 1 Bohrung
         const rawY = (heightMm * hi) / rows;
         const rawX = (widthMm * vi) / cols;
         const x = Math.max(drillRadius, Math.min(widthMm - drillRadius, rawX));
         const y = Math.max(drillRadius, Math.min(heightMm - drillRadius, rawY));
 
-        let label: string;
-        if (isTop && isLeft) label = "Ecke OL";
-        else if (isTop && isRight) label = "Ecke OR";
-        else if (isBottom && isLeft) label = "Ecke UL";
-        else if (isBottom && isRight) label = "Ecke UR";
-        else label = `Bohrung ${positions.length + 1}`;
-
-        positions.push({ x, y, diameter: drillDiam, label });
+        positions.push({
+          x,
+          y,
+          diameter: drillDiam,
+          label: `Bohrung ${positions.length + 1}`,
+        });
       }
     }
   }

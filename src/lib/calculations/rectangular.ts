@@ -133,7 +133,7 @@ export function calculateRectangularOpening(
     heightMm,
     horizontalCuts,
     verticalCuts,
-    cornerVariant,
+    ueberschnitt,
     boreHoleDiameter,
     disabledSides,
   });

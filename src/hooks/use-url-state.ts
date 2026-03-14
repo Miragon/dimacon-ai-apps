@@ -34,7 +34,7 @@ function hydratePositions(state: UrlState): Position[] {
             heightMm: h,
             horizontalCuts: stored.horizontalCuts,
             verticalCuts: stored.verticalCuts,
-            cornerVariant: stored.cornerVariant ?? "A",
+            ueberschnitt: stored.ueberschnitt ?? 0,
             boreHoleDiameter: pos.dimensions.boreHoleDiameter ?? 200,
             disabledSides: ds,
           })

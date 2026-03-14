@@ -58,7 +58,7 @@ export function recalculateFromEdit(
       heightMm: h,
       horizontalCuts: updated.horizontalCuts,
       verticalCuts: updated.verticalCuts,
-      cornerVariant: updated.cornerVariant,
+      ueberschnitt: updated.ueberschnitt,
       boreHoleDiameter: dimensions.boreHoleDiameter ?? 200,
       disabledSides: ds,
     });
