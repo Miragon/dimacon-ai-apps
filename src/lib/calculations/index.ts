@@ -19,7 +19,9 @@ export function calculatePosition(position: Position): CalculationResult {
     material,
     dimensions.bladeDiameter,
     dimensions.maxSegmentWeight,
-    dimensions.disabledSides
+    dimensions.disabledSides,
+    dimensions.einstechtiefe,
+    dimensions.boreHoleDiameter ?? 200
   );
 }
 

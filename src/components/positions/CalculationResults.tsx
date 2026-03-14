@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Scissors, Ruler, Clock, Circle, Layers, ArrowLeftRight, Weight, Square, EyeOff } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Scissors, Ruler, Clock, Circle, Layers, ArrowLeftRight, Weight, Square, EyeOff, Crosshair } from "lucide-react";
 
 interface CalculationResultsProps {
   calculation: CalculationResult;
@@ -17,11 +18,79 @@ interface CalculationResultsProps {
   onFieldChange?: (field: keyof CalculationResult, value: number) => void;
 }
 
+function buildFormulaMap(
+  calculation: CalculationResult,
+  dimensions: Dimensions,
+  material: MaterialType,
+  shape: OpeningShape,
+): Record<string, string> {
+  const isCircular = shape === "circular";
+
+  if (isCircular) {
+    const d = dimensions.diameter ?? 0;
+    const t = dimensions.wallThickness;
+    const timePerMeter = CORE_DRILL_TIME[material];
+    return {
+      totalLinearMeters: `Durchmesser: ${d} mm, Bohrtiefe: ${t} mm = ${t / 1000} m`,
+      estimatedMinutes: `${calculation.totalLinearMeters} m × ${timePerMeter} min/m = ${calculation.estimatedMinutes} min`,
+    };
+  }
+
+  // Rectangular
+  const w = dimensions.width ?? 0;
+  const h = dimensions.height ?? 0;
+  const t = dimensions.wallThickness;
+  const wM = w / 1000;
+  const hM = h / 1000;
+  const tM = t / 1000;
+  const density = MATERIAL_DENSITY[material];
+  const timePerMeter = WALL_SAW_TIME[material];
+  const volume = round3(wM * hM * tM);
+  const weight = round1(volume * density);
+  const sideFactor = calculation.cutFromBothSides ? 2 : 1;
+  const hLm = (calculation.horizontalCuts * w) / 1000;
+  const vLm = (calculation.verticalCuts * h) / 1000;
+  const totalLm = round2((hLm + vLm) * sideFactor);
+  const sawTime = Math.round(totalLm * timePerMeter);
+  const boreTime = calculation.cornerBoreHoles * 5;
+
+  const hCutDesc = calculation.horizontalCuts - 2 > 0
+    ? `2 Basis + ${calculation.horizontalCuts - 2} Teilung`
+    : "2 Basis";
+  const vCutDesc = calculation.verticalCuts - 2 > 0
+    ? `2 Basis + ${calculation.verticalCuts - 2} Teilung`
+    : "2 Basis";
+
+  const sideStr = sideFactor > 1 ? ` × ${sideFactor} (beidseitig)` : "";
+
+  const timeLines = [`Säge: ${totalLm} m × ${timePerMeter} min/m = ${sawTime} min`];
+  if (calculation.cornerBoreHoles > 0) {
+    timeLines.push(`Bohrungen: ${calculation.cornerBoreHoles} × 5 min = ${boreTime} min`);
+  }
+  timeLines.push(`Gesamt: ${sawTime + boreTime} min`);
+
+  const variantLabel = calculation.cornerVariant === "B"
+    ? `Variante B: 2/Ecke × ${calculation.cornerBoreHoles / 2} Ecken`
+    : `Variante A: 1/Ecke × ${calculation.cornerBoreHoles} Ecken`;
+
+  return {
+    totalCuts: `${calculation.horizontalCuts} + ${calculation.verticalCuts} = ${calculation.totalCuts}`,
+    totalLinearMeters: `(${calculation.horizontalCuts}×${wM} + ${calculation.verticalCuts}×${hM})${sideStr} = ${totalLm} m`,
+    cutSurfaceArea: `(${calculation.horizontalCuts}×${w} + ${calculation.verticalCuts}×${h}) × ${t} / 1.000.000 = ${calculation.cutSurfaceArea} m²`,
+    estimatedMinutes: timeLines.join("\n"),
+    cornerBoreHoles: `${calculation.cornerBoreHoles} (${variantLabel})`,
+    totalWeight: `${wM} × ${hM} × ${tM} = ${volume} m³ × ${density} kg/m³ = ${weight} kg`,
+    segmentWeight: `${calculation.totalWeight} kg / ${calculation.segments} Segmente = ${calculation.segmentWeight} kg`,
+    horizontalCuts: `${hCutDesc} = ${calculation.horizontalCuts}`,
+    verticalCuts: `${vCutDesc} = ${calculation.verticalCuts}`,
+  };
+}
+
 export function CalculationResults({
   calculation,
   material,
   dimensions,
-  positionType,
+  positionType: _positionType,
   shape,
   editable = false,
   onFieldChange,
@@ -29,6 +98,10 @@ export function CalculationResults({
   // Deaktivierte Seiten: Anzeige zeigt aktive Schnitte, intern bleiben Strukturwerte
   const disabledH = (dimensions?.disabledSides?.top ? 1 : 0) + (dimensions?.disabledSides?.bottom ? 1 : 0);
   const disabledV = (dimensions?.disabledSides?.left ? 1 : 0) + (dimensions?.disabledSides?.right ? 1 : 0);
+
+  const formulas = dimensions && shape
+    ? buildFormulaMap(calculation, dimensions, material, shape)
+    : {};
 
   const editableField = (
     field: keyof CalculationResult,
@@ -70,29 +143,41 @@ export function CalculationResults({
             icon={<Scissors className="h-4 w-4" />}
             label="Schnitte gesamt"
             value={String(calculation.totalCuts)}
+            formula={formulas.totalCuts}
           />
           <ResultItem
             icon={<Ruler className="h-4 w-4" />}
             label="Laufmeter"
             value={`${calculation.totalLinearMeters} m`}
+            formula={formulas.totalLinearMeters}
           />
           {calculation.cutSurfaceArea > 0 && (
             <ResultItem
               icon={<Square className="h-4 w-4" />}
               label="Schnittfläche"
               value={`${calculation.cutSurfaceArea} m²`}
+              formula={formulas.cutSurfaceArea}
             />
           )}
           <ResultItem
             icon={<Clock className="h-4 w-4" />}
             label="Geschätzte Zeit"
             value={`${calculation.estimatedMinutes} Min.`}
+            formula={formulas.estimatedMinutes}
           />
           <ResultItem
             icon={<Circle className="h-4 w-4" />}
             label="Eckbohrungen"
             value={String(calculation.cornerBoreHoles)}
+            formula={formulas.cornerBoreHoles}
           />
+          {calculation.ueberschnitt > 0 && (
+            <ResultItem
+              icon={<Crosshair className="h-4 w-4" />}
+              label="Überschnitt (eff.)"
+              value={`${calculation.ueberschnitt} mm`}
+            />
+          )}
         </div>
 
         {/* Weight section for rectangular openings */}
@@ -104,11 +189,13 @@ export function CalculationResults({
                 icon={<Weight className="h-4 w-4" />}
                 label="Gesamtgewicht"
                 value={`${calculation.totalWeight} kg`}
+                formula={formulas.totalWeight}
               />
               <ResultItem
                 icon={<Layers className="h-4 w-4" />}
                 label={`${calculation.segments} Segment${calculation.segments > 1 ? "e" : ""} à`}
                 value={`${calculation.segmentWeight} kg`}
+                formula={formulas.segmentWeight}
               />
             </div>
           </>
@@ -117,31 +204,37 @@ export function CalculationResults({
         <Separator />
 
         <div className="space-y-2 text-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Horizontale Schnitte</span>
+          <DetailRow label="Horizontale Schnitte">
             {editableField("horizontalCuts", calculation.horizontalCuts, "Horizontale Schnitte", disabledH)}
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Vertikale Schnitte</span>
+          </DetailRow>
+          <DetailRow label="Vertikale Schnitte">
             {editableField("verticalCuts", calculation.verticalCuts, "Vertikale Schnitte", disabledV)}
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Eckbohrungen</span>
+          </DetailRow>
+          <DetailRow label="Eckbohrungen">
             <span>{calculation.cornerBoreHoles}</span>
-          </div>
+          </DetailRow>
           {calculation.overlap > 0 && (
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Überlappung (berechnet)</span>
+            <DetailRow label="Überlappung (berechnet)">
               <span>{calculation.overlap} mm</span>
-            </div>
+            </DetailRow>
           )}
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Material</span>
+          {calculation.ueberschnitt > 0 && (
+            <DetailRow label="Überschnitt (effektiv)">
+              <span>{calculation.ueberschnitt} mm</span>
+            </DetailRow>
+          )}
+          <DetailRow label="Material">
             <span>{MATERIAL_LABELS[material]}</span>
-          </div>
+          </DetailRow>
         </div>
 
         <div className="flex flex-wrap gap-2">
+          {calculation.cornerVariant && (
+            <Badge variant={calculation.cornerVariant === "B" ? "default" : "secondary"} className="text-xs">
+              <Circle className="mr-1 h-3 w-3" />
+              Variante {calculation.cornerVariant} ({calculation.cornerVariant === "A" ? "1 Bohrung/Ecke" : "2 Bohrungen/Ecke"})
+            </Badge>
+          )}
           {calculation.cutFromBothSides && (
             <Badge variant="secondary" className="text-xs">
               <ArrowLeftRight className="mr-1 h-3 w-3" />
@@ -183,129 +276,8 @@ export function CalculationResults({
             </>
           )}
         </div>
-
-        {/* Berechnungsweg */}
-        {dimensions && positionType && shape && (
-          <CalculationBreakdown
-            calculation={calculation}
-            dimensions={dimensions}
-            material={material}
-            shape={shape}
-          />
-        )}
       </CardContent>
     </Card>
-  );
-}
-
-function CalculationBreakdown({
-  calculation,
-  dimensions,
-  material,
-  shape,
-}: {
-  calculation: CalculationResult;
-  dimensions: Dimensions;
-  material: MaterialType;
-  shape: OpeningShape;
-}) {
-  const isCircular = shape === "circular";
-  const timePerMeter = isCircular ? CORE_DRILL_TIME[material] : WALL_SAW_TIME[material];
-
-  return (
-    <details className="group">
-      <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground select-none">
-        Berechnungsweg anzeigen
-      </summary>
-      <div className="mt-3 rounded-md bg-muted/50 p-3 text-xs font-mono space-y-1">
-        {!isCircular && (
-          <RectangularBreakdown
-            calculation={calculation}
-            dimensions={dimensions}
-            density={MATERIAL_DENSITY[material]}
-            timePerMeter={timePerMeter}
-          />
-        )}
-        {isCircular && (
-          <CircularBreakdown
-            calculation={calculation}
-            dimensions={dimensions}
-            timePerMeter={timePerMeter}
-          />
-        )}
-      </div>
-    </details>
-  );
-}
-
-function RectangularBreakdown({
-  calculation,
-  dimensions,
-  density,
-  timePerMeter,
-}: {
-  calculation: CalculationResult;
-  dimensions: Dimensions;
-  density: number;
-  timePerMeter: number;
-}) {
-  const w = dimensions.width ?? 0;
-  const h = dimensions.height ?? 0;
-  const t = dimensions.wallThickness;
-  const wM = w / 1000;
-  const hM = h / 1000;
-  const tM = t / 1000;
-  const volume = wM * hM * tM;
-  const weight = volume * density;
-  const sideFactor = calculation.cutFromBothSides ? 2 : 1;
-  const hLm = (calculation.horizontalCuts * w) / 1000;
-  const vLm = (calculation.verticalCuts * h) / 1000;
-  const totalLm = (hLm + vLm) * sideFactor;
-  const sawTime = Math.round(totalLm * timePerMeter);
-  const boreTime = calculation.cornerBoreHoles * 5;
-
-  return (
-    <>
-      <p>Volumen: {wM} × {hM} × {tM} = {round3(volume)} m³</p>
-      <p>Gewicht: {round3(volume)} m³ × {density} kg/m³ = {round1(weight)} kg</p>
-      {calculation.segments > 1 && (
-        <>
-          <p>Segmente: {calculation.horizontalCuts - 1} Reihen × {calculation.verticalCuts - 1} Spalten = {calculation.segments}</p>
-          <p>Gewicht/Segment: {calculation.segmentWeight} kg</p>
-        </>
-      )}
-      <p className="mt-2">H-Schnitte: {calculation.horizontalCuts} ({calculation.horizontalCuts - 2 > 0 ? `2 Basis + ${calculation.horizontalCuts - 2} Teilung` : "2 Basis"})</p>
-      <p>V-Schnitte: {calculation.verticalCuts} ({calculation.verticalCuts - 2 > 0 ? `2 Basis + ${calculation.verticalCuts - 2} Teilung` : "2 Basis"})</p>
-      <p>Laufmeter: ({calculation.horizontalCuts}×{wM} + {calculation.verticalCuts}×{hM}){sideFactor > 1 ? ` × ${sideFactor} (beidseitig)` : ""} = {round2(totalLm)} m</p>
-      <p>Schnittfläche: ({calculation.horizontalCuts}×{w} + {calculation.verticalCuts}×{h}) × {t} / 1.000.000 = {calculation.cutSurfaceArea} m²</p>
-      <p className="mt-2">Sägezeit: {round2(totalLm)} m × {timePerMeter} min/m = {sawTime} min</p>
-      {calculation.cornerBoreHoles > 0 && (
-        <p>Bohrungen: {calculation.cornerBoreHoles} × 5 min = {boreTime} min</p>
-      )}
-      <p className="font-semibold">Gesamt: {sawTime} + {boreTime} = {sawTime + boreTime} min</p>
-    </>
-  );
-}
-
-function CircularBreakdown({
-  calculation,
-  dimensions,
-  timePerMeter,
-}: {
-  calculation: CalculationResult;
-  dimensions: Dimensions;
-  timePerMeter: number;
-}) {
-  const d = dimensions.diameter ?? 0;
-  const t = dimensions.wallThickness;
-
-  return (
-    <>
-      <p>Durchmesser: {d} mm</p>
-      <p>Bohrtiefe: {t} mm = {t / 1000} m</p>
-      <p>Laufmeter: {calculation.totalLinearMeters} m</p>
-      <p>Zeit: {calculation.totalLinearMeters} m × {timePerMeter} min/m = {calculation.estimatedMinutes} min</p>
-    </>
   );
 }
 
@@ -317,12 +289,14 @@ function ResultItem({
   icon,
   label,
   value,
+  formula,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
+  formula?: string;
 }) {
-  return (
+  const content = (
     <div className="flex items-center gap-2 rounded-lg border p-2">
       <div className="text-muted-foreground">{icon}</div>
       <div>
@@ -330,5 +304,48 @@ function ResultItem({
         <p className="text-base font-semibold">{value}</p>
       </div>
     </div>
+  );
+
+  if (!formula) return content;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger className="w-full text-left cursor-default">
+        {content}
+      </TooltipTrigger>
+      <TooltipContent className="max-w-md font-mono text-xs whitespace-pre-wrap">
+        {formula}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function DetailRow({
+  label,
+  formula,
+  children,
+}: {
+  label: string;
+  formula?: string;
+  children: React.ReactNode;
+}) {
+  const row = (
+    <div className="flex items-center justify-between">
+      <span className="text-muted-foreground">{label}</span>
+      {children}
+    </div>
+  );
+
+  if (!formula) return row;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger className="w-full text-left cursor-default">
+        {row}
+      </TooltipTrigger>
+      <TooltipContent className="max-w-md font-mono text-xs whitespace-pre-wrap">
+        {formula}
+      </TooltipContent>
+    </Tooltip>
   );
 }

@@ -1,11 +1,10 @@
 import type { PositionType, MaterialType, Dimensions } from "@/types";
 import { MATERIAL_LABELS } from "@/types";
-import { MATERIAL_DENSITY } from "@/lib/calculations/common";
+import { MATERIAL_DENSITY, calculateMaxCutDepth } from "@/lib/calculations/common";
 import { suggestBladeDiameter } from "@/lib/calculations/blade-suggestion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ChevronDown, RefreshCw } from "lucide-react";
@@ -19,8 +18,6 @@ interface DimensionFormProps {
   onDimensionsChange: (dimensions: Dimensions) => void;
   label: string;
   onLabelChange: (label: string) => void;
-  notes: string;
-  onNotesChange: (notes: string) => void;
   onSubmit?: () => void;
 }
 
@@ -31,11 +28,9 @@ export function DimensionForm({
   onDimensionsChange,
   label,
   onLabelChange,
-  notes,
-  onNotesChange,
   onSubmit,
 }: DimensionFormProps) {
-  const updateDim = (key: keyof Dimensions, value: number | undefined) => {
+  const updateDim = (key: keyof Dimensions, value: number | string | undefined) => {
     onDimensionsChange({ ...dimensions, [key]: value });
   };
 
@@ -149,8 +144,8 @@ export function DimensionForm({
             </div>
           </div>
 
-          {/* Blattdurchmesser + Notizen */}
-          <div className="grid gap-4 sm:grid-cols-2">
+          {/* Blattdurchmesser + Einstechtiefe + Bohrdurchmesser + Notizen */}
+          <div className="grid gap-4 sm:grid-cols-4">
             <div className="grid gap-1.5">
               <Label htmlFor="bladeDiameter">
                 Blattdurchmesser <span className="text-muted-foreground text-xs">(mm)</span>
@@ -158,9 +153,9 @@ export function DimensionForm({
               <select
                 id="bladeDiameter"
                 value={dimensions.bladeDiameter ?? ""}
-                onChange={(e) =>
-                  updateDim("bladeDiameter", e.target.value ? Number(e.target.value) : undefined)
-                }
+                onChange={(e) => {
+                  onDimensionsChange({ ...dimensions, bladeDiameter: Number(e.target.value) });
+                }}
                 className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
               >
                 {[600, 800, 1000, 1200, 1400, 1600].map((size) => (
@@ -175,15 +170,45 @@ export function DimensionForm({
                 </p>
               )}
             </div>
+            {(() => {
+              const maxDepth = Math.round(calculateMaxCutDepth(dimensions.bladeDiameter ?? 0));
+              return (
+                <div className="grid gap-1.5">
+                  <Label htmlFor="einstechtiefe">
+                    Einstechtiefe
+                  </Label>
+                  <select
+                    id="einstechtiefe"
+                    value={dimensions.einstechtiefe ?? "maximal"}
+                    onChange={(e) =>
+                      updateDim("einstechtiefe", e.target.value as "maximal" | "wandstaerke")
+                    }
+                    className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                  >
+                    <option value="maximal">Maximal ({maxDepth} mm)</option>
+                    <option value="wandstaerke">Bis Wandstärke ({dimensions.wallThickness ?? 0} mm)</option>
+                  </select>
+                </div>
+              );
+            })()}
             <div className="grid gap-1.5">
-              <Label htmlFor="notes">Notizen</Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => onNotesChange(e.target.value)}
-                placeholder="Zusätzliche Hinweise..."
-                rows={2}
-              />
+              <Label htmlFor="boreHoleDiameter">
+                Bohrdurchmesser <span className="text-muted-foreground text-xs">(mm)</span>
+              </Label>
+              <select
+                id="boreHoleDiameter"
+                value={dimensions.boreHoleDiameter ?? 200}
+                onChange={(e) =>
+                  updateDim("boreHoleDiameter", Number(e.target.value))
+                }
+                className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+              >
+                {[100, 150, 200, 250].map((size) => (
+                  <option key={size} value={size}>
+                    {size} mm
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

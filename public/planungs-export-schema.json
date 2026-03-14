@@ -1,0 +1,273 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dimacon.de/schemas/planungs-export-v1.json",
+  "title": "Dimacon Planungs-Export",
+  "description": "Beschreibt die JSON-Struktur, die als URL-safe Base64-String exportiert wird. Die Kodierung erfolgt als UTF-8 → Base64 mit URL-safe Zeichen (+ → -, / → _, ohne Padding =). Zum Dekodieren: Base64-URL-Zeichen rückersetzen (- → +, _ → /), Padding auffüllen, Base64-dekodieren, UTF-8 lesen, JSON parsen.",
+  "type": "object",
+  "required": ["n", "p"],
+  "additionalProperties": false,
+  "properties": {
+    "n": {
+      "type": "string",
+      "title": "Projektname",
+      "description": "Name des Planungsprojekts / Auftrags"
+    },
+    "p": {
+      "type": "array",
+      "title": "Positionen",
+      "description": "Liste aller Wanddurchbruch-Positionen im Projekt",
+      "items": {
+        "$ref": "#/$defs/Position"
+      }
+    }
+  },
+  "$defs": {
+    "Position": {
+      "type": "object",
+      "title": "Position (Wanddurchbruch)",
+      "description": "Ein einzelner Wanddurchbruch mit Abmessungen, Material und optionaler Berechnung. Form wird aus den Feldern abgeleitet: wenn 'd' (Durchmesser) vorhanden → rund, sonst → rechteckig (w/h).",
+      "required": ["l", "m", "t", "b"],
+      "additionalProperties": false,
+      "properties": {
+        "l": {
+          "type": "string",
+          "title": "Bezeichnung",
+          "description": "Label/Bezeichnung der Position, z.B. 'Pos 1', 'Küche Abluft'",
+          "examples": ["Pos 1", "Pos 2"]
+        },
+        "m": {
+          "type": "string",
+          "title": "Material",
+          "description": "Materialtyp des Werkstücks",
+          "enum": ["beton", "stahlbeton", "mauerwerk", "kalksandstein", "ziegel", "naturstein"]
+        },
+        "w": {
+          "type": "number",
+          "title": "Breite (mm)",
+          "description": "Breite des Durchbruchs in Millimetern. Nur bei rechteckigen Durchbrüchen.",
+          "minimum": 1
+        },
+        "h": {
+          "type": "number",
+          "title": "Höhe (mm)",
+          "description": "Höhe des Durchbruchs in Millimetern. Nur bei rechteckigen Durchbrüchen.",
+          "minimum": 1
+        },
+        "t": {
+          "type": "number",
+          "title": "Wandstärke (mm)",
+          "description": "Dicke/Stärke der Wand in Millimetern",
+          "minimum": 1
+        },
+        "d": {
+          "type": "number",
+          "title": "Durchmesser (mm)",
+          "description": "Durchmesser des Durchbruchs in Millimetern. Nur bei runden Durchbrüchen. Wenn vorhanden, wird die Form als 'rund' interpretiert.",
+          "minimum": 1
+        },
+        "b": {
+          "type": "number",
+          "title": "Blattdurchmesser (mm)",
+          "description": "Durchmesser des Sägeblatts in Millimetern",
+          "minimum": 1
+        },
+        "sw": {
+          "type": "number",
+          "title": "Max. Segmentgewicht (kg)",
+          "description": "Maximales Gewicht pro Einzelsegment in Kilogramm. Standard: 150 kg. Beeinflusst die Anzahl der Schnitte.",
+          "default": 150,
+          "minimum": 1
+        },
+        "et": {
+          "type": "string",
+          "title": "Einstechtiefe",
+          "description": "Einstechtiefe des Sägeblatts an den Ecken. 'm' = maximal (Standard), 'w' = Wandstärke",
+          "enum": ["m", "w"]
+        },
+        "bd": {
+          "type": "number",
+          "title": "Bohrdurchmesser (mm)",
+          "description": "Durchmesser der Eckbohrungen in Millimetern. Standard: 200 mm.",
+          "default": 200,
+          "minimum": 1
+        },
+        "ds": {
+          "type": "string",
+          "title": "Deaktivierte Seiten (Bitmask)",
+          "description": "4-stellige Bitmask für deaktivierte Schnittseiten in der Reihenfolge: oben, unten, links, rechts. '1' = deaktiviert, '0' = aktiv. Beispiel: '0110' = unten und links deaktiviert.",
+          "pattern": "^[01]{4}$",
+          "examples": ["0000", "1000", "0110", "1111"]
+        },
+        "nt": {
+          "type": "string",
+          "title": "Notizen",
+          "description": "Freitext-Notizen zur Position"
+        },
+        "c": {
+          "$ref": "#/$defs/Berechnung",
+          "title": "Berechnungsergebnis",
+          "description": "Gespeichertes Berechnungsergebnis. Optional – wird nur mitgeliefert, wenn eine Berechnung durchgeführt wurde."
+        }
+      },
+      "oneOf": [
+        {
+          "title": "Rechteckiger Durchbruch",
+          "description": "Rechteckiger Wanddurchbruch mit Breite und Höhe",
+          "required": ["w", "h"],
+          "properties": {
+            "d": false
+          }
+        },
+        {
+          "title": "Runder Durchbruch",
+          "description": "Runder Wanddurchbruch mit Durchmesser",
+          "required": ["d"],
+          "properties": {
+            "w": false,
+            "h": false
+          }
+        }
+      ]
+    },
+    "Berechnung": {
+      "type": "object",
+      "title": "Berechnungsergebnis",
+      "description": "Kompaktes Berechnungsergebnis mit allen Schnitt- und Bohrungsdaten",
+      "required": ["hc", "vc", "tc", "lm", "cb", "em", "sb", "bs", "sg", "tw", "wt", "ol", "cs", "ue", "cv"],
+      "additionalProperties": false,
+      "properties": {
+        "hc": {
+          "type": "number",
+          "title": "Horizontale Schnitte",
+          "description": "Anzahl der horizontalen Schnitte",
+          "minimum": 0
+        },
+        "vc": {
+          "type": "number",
+          "title": "Vertikale Schnitte",
+          "description": "Anzahl der vertikalen Schnitte",
+          "minimum": 0
+        },
+        "tc": {
+          "type": "number",
+          "title": "Gesamtschnitte",
+          "description": "Gesamtanzahl aller Schnitte (horizontal + vertikal, ggf. Vorder- und Rückseite)",
+          "minimum": 0
+        },
+        "lm": {
+          "type": "number",
+          "title": "Laufmeter gesamt",
+          "description": "Gesamtlänge aller Schnitte in Metern",
+          "minimum": 0
+        },
+        "cb": {
+          "type": "number",
+          "title": "Eckbohrungen",
+          "description": "Anzahl der Kernbohrungen an den Ecken",
+          "minimum": 0
+        },
+        "em": {
+          "type": "number",
+          "title": "Geschätzte Minuten",
+          "description": "Geschätzte Arbeitszeit in Minuten",
+          "minimum": 0
+        },
+        "sb": {
+          "type": "number",
+          "title": "Empfohlene Blattgröße (mm)",
+          "description": "Empfohlener Sägeblattdurchmesser in Millimetern",
+          "minimum": 0
+        },
+        "bs": {
+          "type": "integer",
+          "title": "Beidseitig schneiden",
+          "description": "Ob von beiden Seiten geschnitten wird. 0 = nein (einseitig), 1 = ja (beidseitig)",
+          "enum": [0, 1]
+        },
+        "sg": {
+          "type": "number",
+          "title": "Segmente",
+          "description": "Anzahl der Segmente, in die der Durchbruch aufgeteilt wird",
+          "minimum": 1
+        },
+        "tw": {
+          "type": "number",
+          "title": "Gesamtgewicht (kg)",
+          "description": "Gesamtgewicht des herauszutrennenden Materials in Kilogramm",
+          "minimum": 0
+        },
+        "wt": {
+          "type": "number",
+          "title": "Segmentgewicht (kg)",
+          "description": "Gewicht pro einzelnem Segment in Kilogramm",
+          "minimum": 0
+        },
+        "ol": {
+          "type": "number",
+          "title": "Überlappung (mm)",
+          "description": "Berechnete Schnittüberlappung in Millimetern",
+          "minimum": 0
+        },
+        "cs": {
+          "type": "number",
+          "title": "Schnittfläche (m²)",
+          "description": "Gesamte Schnittfläche in Quadratmetern",
+          "minimum": 0
+        },
+        "ue": {
+          "type": "number",
+          "title": "Überschnitt (mm)",
+          "description": "Effektiver Überschnitt in Millimetern – wie weit die Schnitte über den Rand des Durchbruchs hinausgehen",
+          "minimum": 0
+        },
+        "cv": {
+          "type": "integer",
+          "title": "Eckvariante",
+          "description": "Bohrvariante an den Ecken. 0 = Variante A (1 Bohrung pro Ecke), 1 = Variante B (2 Bohrungen pro Ecke)",
+          "enum": [0, 1]
+        },
+        "cl": {
+          "type": "array",
+          "title": "Einzelschnitte",
+          "description": "Liste aller einzelnen Schnittlinien mit jeweiliger Länge. Enthält sowohl Rand- als auch Teilungsschnitte, ggf. für Vorder- und Rückseite.",
+          "items": {
+            "$ref": "#/$defs/Schnittlinie"
+          }
+        }
+      }
+    },
+    "Schnittlinie": {
+      "type": "object",
+      "title": "Einzelne Schnittlinie",
+      "description": "Ein einzelner Schnitt mit Bezeichnung, Länge in mm und Seite. Horizontale Schnitte (Oben, Unten, H-Teilung) haben die Breite des Durchbruchs als Länge, vertikale Schnitte (Links, Rechts, V-Teilung) die Höhe.",
+      "required": ["n", "ln", "s"],
+      "additionalProperties": false,
+      "properties": {
+        "n": {
+          "type": "string",
+          "title": "Bezeichnung",
+          "description": "Label des Schnitts: 'Oben', 'Unten', 'Links', 'Rechts' für Randschnitte, 'H-Teilung 1', 'V-Teilung 1' etc. für Teilungsschnitte",
+          "examples": ["Oben", "Unten", "Links", "Rechts", "H-Teilung 1", "V-Teilung 1"]
+        },
+        "ln": {
+          "type": "number",
+          "title": "Länge (mm)",
+          "description": "Länge des Schnitts in Millimetern",
+          "minimum": 0
+        },
+        "s": {
+          "type": "integer",
+          "title": "Seite",
+          "description": "Von welcher Seite der Schnitt ausgeführt wird. 0 = Vorderseite, 1 = Rückseite (nur bei beidseitigem Schneiden)",
+          "enum": [0, 1]
+        },
+        "x": {
+          "type": "integer",
+          "title": "Deaktiviert",
+          "description": "Wenn 1, ist dieser Schnitt deaktiviert (z.B. weil die Seite offen ist). Wird weggelassen wenn der Schnitt aktiv ist.",
+          "enum": [1]
+        }
+      }
+    }
+  }
+}

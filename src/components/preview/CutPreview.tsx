@@ -345,11 +345,24 @@ function RectangularPreview({
           cx={offsetX + bh.x * scale}
           cy={offsetY + bh.y * scale}
           r={Math.max((bh.diameter * scale) / 2, 5)}
-          fill="none"
+          fill="rgba(59,130,246,0.08)"
           stroke="#3b82f6"
           strokeWidth="1.5"
         />
       ))}
+
+      {/* Bore hole summary */}
+      {calculation.boreHolePositions.length > 0 && (
+        <text
+          x={offsetX + scaledW / 2}
+          y={offsetY + scaledH + 35}
+          textAnchor="middle"
+          fontSize="10"
+          fill="#3b82f6"
+        >
+          {calculation.boreHolePositions.length} Bohrung{calculation.boreHolePositions.length !== 1 ? "en" : ""} Ø{calculation.boreHolePositions[0].diameter} mm
+        </text>
+      )}
 
       {/* Overall dimension labels */}
       <DimensionLabel
@@ -519,11 +532,23 @@ function CircularPreview({
           cx={offsetX + bh.x * scale}
           cy={offsetY + bh.y * scale}
           r={Math.max((bh.diameter * scale) / 2, 4)}
-          fill="none"
+          fill="rgba(59,130,246,0.08)"
           stroke="#3b82f6"
           strokeWidth="1.5"
         />
       ))}
+      {/* Bore hole summary */}
+      {calculation.boreHolePositions.length > 0 && (
+        <text
+          x={cx}
+          y={cy + r + 20}
+          textAnchor="middle"
+          fontSize="10"
+          fill="#3b82f6"
+        >
+          {calculation.boreHolePositions.length} Bohrung{calculation.boreHolePositions.length !== 1 ? "en" : ""} Ø{calculation.boreHolePositions[0].diameter} mm
+        </text>
+      )}
       {/* Diameter label */}
       <line x1={cx - r} y1={cy} x2={cx + r} y2={cy} stroke="#666" strokeWidth="0.5" strokeDasharray="4,2" />
       <text x={cx} y={cy - 5} textAnchor="middle" fontSize="11" fill="#666">

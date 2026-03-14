@@ -14,10 +14,20 @@ export interface UrlPosition {
   d?: number; // diameter (circular)
   b: number; // bladeDiameter (mm)
   sw?: number; // maxSegmentWeight (kg)
+  et?: string; // einstechtiefe: "m" = maximal, "w" = wandstaerke
+  bd?: number; // boreHoleDiameter (mm)
   ds?: string; // disabledSides as "0110" bitmask (top,bottom,left,right)
   nt?: string; // notes
   // Stored calculation values:
   c?: UrlCalc;
+}
+
+/** Compact cut line with label and length */
+export interface UrlCutLine {
+  n: string;  // label (e.g. "Oben", "Links", "H-Teilung 1")
+  ln: number; // length in mm
+  s: number;  // side: 0=front, 1=back
+  x?: number; // disabled: 1 if true (omitted if active)
 }
 
 /** Compact calculation – everything needed to restore without recalculating */
@@ -35,6 +45,9 @@ export interface UrlCalc {
   wt: number; // segmentWeight
   ol: number; // overlap
   cs: number; // cutSurfaceArea
+  ue: number; // ueberschnitt
+  cv: number; // cornerVariant (0=A, 1=B)
+  cl?: UrlCutLine[]; // individual cut lines with lengths
 }
 
 function disabledSidesToBitmask(ds?: DisabledSides): string | undefined {
@@ -57,7 +70,21 @@ function bitmaskToDisabledSides(bits?: string): DisabledSides | undefined {
   return Object.keys(ds).length > 0 ? ds : undefined;
 }
 
+function cutLineLength(line: { x1: number; y1: number; x2: number; y2: number }): number {
+  return Math.round(Math.sqrt((line.x2 - line.x1) ** 2 + (line.y2 - line.y1) ** 2) * 10) / 10;
+}
+
 function calcToUrlCalc(calc: CalculationResult): UrlCalc {
+  const cl: UrlCutLine[] = calc.cutLines.map((line) => {
+    const entry: UrlCutLine = {
+      n: line.label,
+      ln: cutLineLength(line),
+      s: line.side === "back" ? 1 : 0,
+    };
+    if (line.disabled) entry.x = 1;
+    return entry;
+  });
+
   return {
     hc: calc.horizontalCuts,
     vc: calc.verticalCuts,
@@ -72,6 +99,9 @@ function calcToUrlCalc(calc: CalculationResult): UrlCalc {
     wt: calc.segmentWeight,
     ol: calc.overlap,
     cs: calc.cutSurfaceArea,
+    ue: calc.ueberschnitt,
+    cv: calc.cornerVariant === "B" ? 1 : 0,
+    cl,
   };
 }
 
@@ -90,6 +120,8 @@ export function urlCalcToCalc(uc: UrlCalc): Omit<CalculationResult, "cutLines" |
     segmentWeight: uc.wt,
     overlap: uc.ol,
     cutSurfaceArea: uc.cs,
+    ueberschnitt: uc.ue ?? 0,
+    cornerVariant: uc.cv === 1 ? "B" : "A",
   };
 }
 
@@ -105,6 +137,12 @@ export function positionToUrlPos(p: Position): UrlPosition {
   if (p.dimensions.diameter != null) up.d = p.dimensions.diameter;
   if (p.dimensions.maxSegmentWeight != null && p.dimensions.maxSegmentWeight !== 150) {
     up.sw = p.dimensions.maxSegmentWeight;
+  }
+  if (p.dimensions.einstechtiefe && p.dimensions.einstechtiefe !== "maximal") {
+    up.et = p.dimensions.einstechtiefe === "wandstaerke" ? "w" : "m";
+  }
+  if (p.dimensions.boreHoleDiameter != null && p.dimensions.boreHoleDiameter !== 200) {
+    up.bd = p.dimensions.boreHoleDiameter;
   }
   const dsBits = disabledSidesToBitmask(p.dimensions.disabledSides);
   if (dsBits) up.ds = dsBits;
@@ -128,6 +166,8 @@ export function urlPosToPosition(up: UrlPosition, index: number): Position {
       diameter: up.d,
       bladeDiameter: up.b,
       maxSegmentWeight: up.sw ?? 150,
+      einstechtiefe: up.et === "w" ? "wandstaerke" : typeof up.et === "number" ? "maximal" : up.et === "m" ? "maximal" : undefined,
+      boreHoleDiameter: up.bd ?? 200,
       disabledSides: bitmaskToDisabledSides(up.ds),
     },
     material: up.m as MaterialType,
