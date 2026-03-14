@@ -100,6 +100,28 @@ export function generateBoreHolePositions(
   return positions;
 }
 
+function findOptimalGrid(
+  totalSegmentsNeeded: number,
+  widthMm: number,
+  heightMm: number
+): { rows: number; cols: number } {
+  let bestRows = 1;
+  let bestCols = totalSegmentsNeeded;
+  let bestCost = (bestRows - 1) * widthMm + (bestCols - 1) * heightMm;
+
+  for (let r = 2; r <= totalSegmentsNeeded; r++) {
+    const c = Math.ceil(totalSegmentsNeeded / r);
+    const cost = (r - 1) * widthMm + (c - 1) * heightMm;
+    if (cost < bestCost) {
+      bestCost = cost;
+      bestRows = r;
+      bestCols = c;
+    }
+  }
+
+  return { rows: bestRows, cols: bestCols };
+}
+
 export function calculateRectangularOpening(
   widthMm: number,
   heightMm: number,
@@ -123,8 +145,7 @@ export function calculateRectangularOpening(
 
   if (totalWeight > maxSegmentWeight) {
     const totalSegmentsNeeded = Math.ceil(totalWeight / maxSegmentWeight);
-    const rows = Math.ceil(Math.sqrt(totalSegmentsNeeded));
-    const cols = Math.ceil(totalSegmentsNeeded / rows);
+    const { rows, cols } = findOptimalGrid(totalSegmentsNeeded, widthMm, heightMm);
     horizontalCuts = 2 + (rows - 1);
     verticalCuts = 2 + (cols - 1);
     segments = rows * cols;
