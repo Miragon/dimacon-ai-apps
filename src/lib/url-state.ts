@@ -1,4 +1,4 @@
-import type { Position, MaterialType, DisabledSides, CalculationResult } from "@/types";
+import type { Position, MaterialType, DisabledSides, CalculationResult } from "../types";
 
 export interface UrlState {
   n: string; // name

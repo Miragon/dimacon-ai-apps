@@ -1,4 +1,4 @@
-import type { CalculationResult, Dimensions, MaterialType, PositionType, OpeningShape } from "@/types";
+import type { CalculationResult, Dimensions, OpeningShape } from "../../types";
 import { estimateRectangularTime, estimateDrillingTime } from "./time-estimation";
 import { generateCutLines } from "./rectangular";
 import { generateBoreHolePositions } from "./ueberschnitt";
@@ -12,8 +12,6 @@ export function recalculateFromEdit(
   field: keyof CalculationResult,
   value: number,
   dimensions: Dimensions,
-  material: MaterialType,
-  _positionType: PositionType,
   shape: OpeningShape
 ): CalculationResult {
   const updated = { ...calc, [field]: value };

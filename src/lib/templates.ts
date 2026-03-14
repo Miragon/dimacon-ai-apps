@@ -1,4 +1,4 @@
-import type { MaterialType, Dimensions } from "@/types";
+import type { MaterialType, Dimensions } from "../types";
 
 export interface PositionTemplate {
   label: string;

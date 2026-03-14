@@ -1,4 +1,4 @@
-import type { MaterialType } from "@/types";
+import type { MaterialType } from "../../types";
 
 // Material densities in kg/m³
 export const MATERIAL_DENSITY: Record<MaterialType, number> = {

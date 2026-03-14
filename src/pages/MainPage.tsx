@@ -331,8 +331,6 @@ function PositionEditor({
       field,
       value,
       dimensions,
-      material,
-      positionType,
       shape
     );
     setCalculation(recalculated);
@@ -349,8 +347,6 @@ function PositionEditor({
       "horizontalCuts",
       calculation.horizontalCuts,
       newDimensions,
-      material,
-      positionType,
       shape
     );
     setCalculation(recalculated);

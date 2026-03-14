@@ -1,5 +1,9 @@
 {
   "mcpServers": {
+    "dimacon-planung": {
+      "command": "npx",
+      "args": ["tsx", "--tsconfig", "tsconfig.mcp.json", "src/mcp/server.ts"]
+    },
     "shadcn": {
       "command": "npx",
       "args": [

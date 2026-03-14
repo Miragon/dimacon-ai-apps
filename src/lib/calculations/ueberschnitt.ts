@@ -1,4 +1,4 @@
-import type { BoreHolePosition, DisabledSides } from "@/types";
+import type { BoreHolePosition, DisabledSides } from "../../types";
 const FLANSCH_DISTANCE = 80; // mm (from 160mm flange diameter)
 
 /**

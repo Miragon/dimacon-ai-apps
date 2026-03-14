@@ -1,4 +1,4 @@
-import type { Position, CalculationResult } from "@/types";
+import type { Position, CalculationResult } from "../../types";
 import { calculateRectangularOpening } from "./rectangular";
 import { calculateCircularOpening } from "./circular";
 

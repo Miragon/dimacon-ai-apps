@@ -1,4 +1,4 @@
-import type { MaterialType, CalculationResult } from "@/types";
+import type { MaterialType, CalculationResult } from "../../types";
 import { estimateDrillingTime } from "./time-estimation";
 
 const MAX_CROWN_DIAMETER = 500; // mm
@@ -6,7 +6,7 @@ const MAX_CROWN_DIAMETER = 500; // mm
 export function calculateCircularOpening(
   diameterMm: number,
   wallThickness: number,
-  material: MaterialType
+  _material: MaterialType
 ): CalculationResult {
   const linearMeters = wallThickness / 1000;
 

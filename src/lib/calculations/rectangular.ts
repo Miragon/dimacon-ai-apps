@@ -1,4 +1,4 @@
-import type { MaterialType, CalculationResult, CutLine, DisabledSides } from "@/types";
+import type { MaterialType, CalculationResult, CutLine, DisabledSides } from "../../types";
 import { needsCutFromBothSides, calculateSegmentWeight, calculateOverlap, MAX_SEGMENT_WEIGHT } from "./common";
 import { suggestBladeDiameter } from "./blade-suggestion";
 import { estimateRectangularTime } from "./time-estimation";
