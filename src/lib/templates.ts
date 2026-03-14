@@ -68,16 +68,4 @@ export const TEMPLATES: PositionTemplate[] = [
       maxSegmentWeight: 150,
     },
   },
-  {
-    label: "Lüftungsöffnung",
-    description: "400 × 400 mm, Ziegel 240 mm",
-    material: "ziegel",
-    dimensions: {
-      width: 400,
-      height: 400,
-      wallThickness: 240,
-      bladeDiameter: 600,
-      maxSegmentWeight: 150,
-    },
-  },
 ];
