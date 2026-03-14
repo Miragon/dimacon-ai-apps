@@ -1,6 +1,7 @@
 import type { CalculationResult, MaterialType, Dimensions, PositionType, OpeningShape } from "@/types";
 import { MATERIAL_LABELS } from "@/types";
 import { MATERIAL_DENSITY, MINUTES_PER_DRILLING, MINUTES_PER_M2_CUT_SURFACE, MINUTES_PER_CUT_RETOOLING } from "@/lib/calculations/common";
+import { formatMinutes } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -158,7 +159,7 @@ export function CalculationResults({
           <ResultItem
             icon={<Clock className="h-4 w-4" />}
             label="Geschätzte Zeit"
-            value={`${calculation.estimatedMinutes} Min.`}
+            value={formatMinutes(calculation.estimatedMinutes)}
             formula={formulas.estimatedMinutes}
           />
           <ResultItem

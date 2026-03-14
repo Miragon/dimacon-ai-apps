@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { POSITION_TYPE_LABELS, MATERIAL_LABELS } from "@/types";
+import { formatMinutes } from "@/lib/utils";
 import { Trash2, Ruler, Clock, Scissors } from "lucide-react";
 
 interface PositionCardProps {
@@ -42,7 +43,7 @@ export function PositionCard({ position, onDelete, onClick }: PositionCardProps)
               </span>
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                {calc.estimatedMinutes} Min.
+                {formatMinutes(calc.estimatedMinutes)}
               </span>
             </div>
           )}
