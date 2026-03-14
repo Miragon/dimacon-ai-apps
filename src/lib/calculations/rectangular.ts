@@ -6,7 +6,6 @@ import {
   generateBoreHolePositions,
   calculateUeberschnittA,
   calculateUeberschnittB,
-  calculateEffectiveUeberschnitt,
   determineCornerVariant,
 } from "./ueberschnitt";
 
@@ -86,11 +85,11 @@ export function calculateRectangularOpening(
     boreHoleDiameter,
     cutFromBothSides
   );
-  const geometricUeberschnitt = cornerVariant === "A"
-    ? calculateUeberschnittA(wallThickness, effectiveBlade, cutFromBothSides)
-    : calculateUeberschnittB(wallThickness, effectiveBlade, cutFromBothSides);
   const ueberschnitt = Math.round(
-    calculateEffectiveUeberschnitt(geometricUeberschnitt, boreHoleDiameter) * 10
+    (cornerVariant === "A"
+      ? calculateUeberschnittA(wallThickness, effectiveBlade, cutFromBothSides)
+      : calculateUeberschnittB(effectiveEinstechtiefe, effectiveBlade)
+    ) * 10
   ) / 10;
 
   // Base cuts: 2 horizontal (top + bottom) + 2 vertical (left + right)

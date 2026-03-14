@@ -2,11 +2,10 @@ import type { PositionType, MaterialType, Dimensions } from "@/types";
 import { MATERIAL_LABELS } from "@/types";
 import { MATERIAL_DENSITY } from "@/lib/calculations/common";
 import { suggestBladeDiameter } from "@/lib/calculations/blade-suggestion";
-import { calculateMaxCutDepth, needsCutFromBothSides } from "@/lib/calculations/common";
+import { calculateMaxCutDepth } from "@/lib/calculations/common";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ChevronDown, RefreshCw } from "lucide-react";
@@ -20,8 +19,6 @@ interface DimensionFormProps {
   onDimensionsChange: (dimensions: Dimensions) => void;
   label: string;
   onLabelChange: (label: string) => void;
-  notes: string;
-  onNotesChange: (notes: string) => void;
   onSubmit?: () => void;
 }
 
@@ -32,8 +29,6 @@ export function DimensionForm({
   onDimensionsChange,
   label,
   onLabelChange,
-  notes,
-  onNotesChange,
   onSubmit,
 }: DimensionFormProps) {
   const updateDim = (key: keyof Dimensions, value: number | undefined) => {
@@ -198,13 +193,9 @@ export function DimensionForm({
                     min={0}
                     max={Math.round(maxCutDepth)}
                   />
-                  {dimensions.einstechtiefe != null && dimensions.wallThickness > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      {dimensions.einstechtiefe >= (needsCutFromBothSides(dimensions.wallThickness, effectiveBlade) ? dimensions.wallThickness / 2 : dimensions.wallThickness) - 25
-                        ? "Variante A (1 Bohrung/Ecke)"
-                        : "Variante B (2 Bohrungen/Ecke)"}
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Max. {Math.round(maxCutDepth)} mm
+                  </p>
                 </div>
               );
             })()}
@@ -226,16 +217,6 @@ export function DimensionForm({
                   </option>
                 ))}
               </select>
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="notes">Notizen</Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => onNotesChange(e.target.value)}
-                placeholder="Zusätzliche Hinweise..."
-                rows={2}
-              />
             </div>
           </div>
 

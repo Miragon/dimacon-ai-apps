@@ -406,8 +406,6 @@ function PositionEditor({
         onDimensionsChange={setDimensions}
         label={label}
         onLabelChange={setLabel}
-        notes={notes}
-        onNotesChange={setNotes}
         onSubmit={handleRecalculate}
       />
 

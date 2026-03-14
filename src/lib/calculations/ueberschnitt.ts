@@ -1,6 +1,4 @@
 import type { BoreHolePosition, DisabledSides } from "@/types";
-import { calculateMaxCutDepth } from "./common";
-
 const FLANSCH_DISTANCE = 60; // mm (from 120mm flange diameter)
 
 /**
@@ -25,31 +23,22 @@ export function calculateUeberschnittA(
 }
 
 /**
- * Geometrischer Überschnitt Variante B (minimal eingestochen).
- * Ü_B = sqrt(2 × maxCutDepth × d_eff)
+ * Geometrischer Überschnitt Variante B (flach eingestochen).
+ * Gleiche Bogenformel wie A, aber mit tatsächlicher Einstechtiefe statt d_eff.
  */
 export function calculateUeberschnittB(
-  wallThickness: number,
+  einstechtiefe: number,
   bladeDiameter: number,
-  cutFromBothSides: boolean
 ): number {
-  const maxCutDepth = calculateMaxCutDepth(bladeDiameter);
-  const dEff = cutFromBothSides ? wallThickness / 2 : wallThickness;
+  const r = bladeDiameter / 2;
+  const h = FLANSCH_DISTANCE;
 
-  const val = 2 * maxCutDepth * dEff;
-  if (val < 0) return 0;
+  const inner1 = r * r - h * h;
+  const inner2 = r * r - (einstechtiefe + h) * (einstechtiefe + h);
 
-  return Math.sqrt(val);
-}
+  if (inner1 < 0 || inner2 < 0) return 0;
 
-/**
- * Effektiver Überschnitt: geometrischer Überschnitt minus Bohrradius.
- */
-export function calculateEffectiveUeberschnitt(
-  geometricUeberschnitt: number,
-  boreHoleDiameter: number
-): number {
-  return Math.max(0, geometricUeberschnitt - boreHoleDiameter / 2);
+  return Math.sqrt(inner1) - Math.sqrt(inner2);
 }
 
 /**
