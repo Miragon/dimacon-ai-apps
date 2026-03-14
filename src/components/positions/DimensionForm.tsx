@@ -22,7 +22,6 @@ interface DimensionFormProps {
   notes: string;
   onNotesChange: (notes: string) => void;
   onSubmit?: () => void;
-  headerAction?: React.ReactNode;
 }
 
 export function DimensionForm({
@@ -35,7 +34,6 @@ export function DimensionForm({
   notes,
   onNotesChange,
   onSubmit,
-  headerAction,
 }: DimensionFormProps) {
   const updateDim = (key: keyof Dimensions, value: number | undefined) => {
     onDimensionsChange({ ...dimensions, [key]: value });
@@ -76,22 +74,19 @@ export function DimensionForm({
     <form onSubmit={onSubmit ? handleSubmit : undefined} className="space-y-4">
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setOpen((o) => !o)}
-              className="flex flex-1 items-center gap-2 text-left"
-            >
-              <CardTitle className="text-base">Grunddaten & Maße</CardTitle>
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
-                  open && "rotate-180"
-                )}
-              />
-            </button>
-            {headerAction}
-          </div>
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            className="flex w-full items-center gap-2 text-left"
+          >
+            <CardTitle className="text-base">Grunddaten & Maße</CardTitle>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+                open && "rotate-180"
+              )}
+            />
+          </button>
         </CardHeader>
         {open && <CardContent className="space-y-4">
           {/* Bezeichnung */}

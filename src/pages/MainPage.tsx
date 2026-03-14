@@ -391,6 +391,10 @@ function PositionEditor({
             Position #{displayIndex + 1}
           </p>
         </div>
+        <Button variant="outline" onClick={handleRecalculate}>
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Neu berechnen
+        </Button>
         {!isNew && (
           <Button variant="destructive" size="icon" onClick={handleDelete}>
             <Trash2 className="h-4 w-4" />
@@ -408,12 +412,6 @@ function PositionEditor({
         onLabelChange={setLabel}
         notes={notes}
         onNotesChange={setNotes}
-        headerAction={
-          <Button variant="outline" size="sm" onClick={handleRecalculate}>
-            <RefreshCw className="mr-2 h-3.5 w-3.5" />
-            Neu berechnen
-          </Button>
-        }
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
