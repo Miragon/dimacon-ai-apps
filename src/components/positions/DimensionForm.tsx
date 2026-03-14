@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, RefreshCw } from "lucide-react";
 import { useState } from "react";
 
 interface DimensionFormProps {
@@ -182,14 +182,15 @@ export function DimensionForm({
               />
             </div>
           </div>
+
+          {onSubmit && (
+            <Button type="submit" className="w-1/2">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Neu berechnen
+            </Button>
+          )}
         </CardContent>}
       </Card>
-
-      {onSubmit && (
-        <Button type="submit" className="w-full">
-          Berechnen
-        </Button>
-      )}
     </form>
   );
 }

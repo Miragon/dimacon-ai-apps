@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, Download, ArrowLeft, Trash2, RefreshCw } from "lucide-react";
+import { Plus, Download, ArrowLeft, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -391,10 +391,6 @@ function PositionEditor({
             Position #{displayIndex + 1}
           </p>
         </div>
-        <Button variant="outline" onClick={handleRecalculate}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Neu berechnen
-        </Button>
         {!isNew && (
           <Button variant="destructive" size="icon" onClick={handleDelete}>
             <Trash2 className="h-4 w-4" />
@@ -412,6 +408,7 @@ function PositionEditor({
         onLabelChange={setLabel}
         notes={notes}
         onNotesChange={setNotes}
+        onSubmit={handleRecalculate}
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
