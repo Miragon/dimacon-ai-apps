@@ -43,6 +43,7 @@ export function MainPage() {
   const content =
     editIndex !== null ? (
       <PositionEditor
+        key={String(editIndex)}
         editIndex={editIndex}
         positions={positions}
         onAdd={addPosition}
@@ -126,7 +127,7 @@ function ListView({
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
             placeholder="Auftragsname..."
-            className="text-xl font-bold h-auto border-none shadow-none px-0 focus-visible:ring-0"
+            className="!text-2xl font-bold h-auto border-none shadow-none px-0 focus-visible:ring-0"
           />
         </div>
         {positions.length > 0 && (
@@ -249,7 +250,7 @@ function PositionEditor({
       maxSegmentWeight: 150,
     }
   );
-  const [notes, setNotes] = useState(existingPosition?.notes ?? "");
+  const notes = existingPosition?.notes ?? "";
   const [calculation, setCalculation] = useState<CalculationResult>(() => {
     if (existingPosition?.calculation) return existingPosition.calculation;
     const tempPos: Position = {
