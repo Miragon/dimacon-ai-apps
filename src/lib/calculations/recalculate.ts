@@ -1,6 +1,7 @@
 import type { CalculationResult, Dimensions, MaterialType, PositionType, OpeningShape } from "@/types";
 import { estimateWallSawTime, estimateCoreDrillTime } from "./time-estimation";
-import { generateCutLines, generateBoreHolePositions } from "./rectangular";
+import { generateCutLines } from "./rectangular";
+import { generateBoreHolePositions } from "./ueberschnitt";
 
 /**
  * Recalculates derived values (totalCuts, totalLinearMeters, estimatedMinutes)
@@ -52,7 +53,15 @@ export function recalculateFromEdit(
 
     // Regenerate cut lines and bore hole positions for SVG
     updated.cutLines = generateCutLines(w, h, updated.horizontalCuts, updated.verticalCuts, updated.cutFromBothSides, ds);
-    updated.boreHolePositions = generateBoreHolePositions(w, h, updated.horizontalCuts, updated.verticalCuts, ds);
+    updated.boreHolePositions = generateBoreHolePositions({
+      widthMm: w,
+      heightMm: h,
+      horizontalCuts: updated.horizontalCuts,
+      verticalCuts: updated.verticalCuts,
+      ueberschnitt: updated.ueberschnitt,
+      boreHoleDiameter: dimensions.boreHoleDiameter ?? 200,
+      disabledSides: ds,
+    });
 
     // Auto-update bore holes from generated positions
     if (field === "horizontalCuts" || field === "verticalCuts") {

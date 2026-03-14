@@ -6,6 +6,13 @@ export interface NewWorkingTO {
   notes: string;
 }
 
+export interface WorkingCutTO {
+  label: string;
+  lengthMm: number;
+  side: "front" | "back";
+  disabled: boolean;
+}
+
 export interface WorkingPositionTO {
   type: string;
   label: string;
@@ -26,6 +33,7 @@ export interface WorkingPositionTO {
     suggestedBladeSize: number;
     cutFromBothSides: boolean;
     segments: number;
+    cuts: WorkingCutTO[];
   } | null;
   notes: string;
 }
@@ -52,6 +60,12 @@ function mapPosition(position: Position): WorkingPositionTO {
           suggestedBladeSize: position.calculation.suggestedBladeSize,
           cutFromBothSides: position.calculation.cutFromBothSides,
           segments: position.calculation.segments,
+          cuts: position.calculation.cutLines.map((line) => ({
+            label: line.label,
+            lengthMm: Math.round(Math.sqrt((line.x2 - line.x1) ** 2 + (line.y2 - line.y1) ** 2) * 10) / 10,
+            side: line.side,
+            disabled: !!line.disabled,
+          })),
         }
       : null,
     notes: position.notes,
