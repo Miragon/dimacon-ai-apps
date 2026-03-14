@@ -76,12 +76,10 @@ export function calculateRectangularOpening(
 
   // Variante bestimmen und Überschnitt berechnen
   const cornerVariant = determineCornerVariant(einstechtiefe);
-  const ueberschnitt = Math.round(
-    (cornerVariant === "A"
-      ? calculateUeberschnittA(wallThickness, effectiveBlade, cutFromBothSides)
-      : calculateUeberschnittB(wallThickness, effectiveBlade, cutFromBothSides)
-    ) * 10
-  ) / 10;
+  const ueberschnittRaw = cornerVariant === "A"
+    ? calculateUeberschnittA(wallThickness, effectiveBlade, cutFromBothSides)
+    : calculateUeberschnittB(wallThickness, effectiveBlade, cutFromBothSides);
+  const ueberschnitt = Math.round(ueberschnittRaw / 10) * 10;
 
   // Base cuts: 2 horizontal (top + bottom) + 2 vertical (left + right)
   let horizontalCuts = 2;

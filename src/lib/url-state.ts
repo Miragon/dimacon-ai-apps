@@ -22,6 +22,14 @@ export interface UrlPosition {
   c?: UrlCalc;
 }
 
+/** Compact cut line with label and length */
+export interface UrlCutLine {
+  n: string;  // label (e.g. "Oben", "Links", "H-Teilung 1")
+  ln: number; // length in mm
+  s: number;  // side: 0=front, 1=back
+  x?: number; // disabled: 1 if true (omitted if active)
+}
+
 /** Compact calculation – everything needed to restore without recalculating */
 export interface UrlCalc {
   hc: number; // horizontalCuts
@@ -39,6 +47,7 @@ export interface UrlCalc {
   cs: number; // cutSurfaceArea
   ue: number; // ueberschnitt
   cv: number; // cornerVariant (0=A, 1=B)
+  cl?: UrlCutLine[]; // individual cut lines with lengths
 }
 
 function disabledSidesToBitmask(ds?: DisabledSides): string | undefined {
@@ -61,7 +70,21 @@ function bitmaskToDisabledSides(bits?: string): DisabledSides | undefined {
   return Object.keys(ds).length > 0 ? ds : undefined;
 }
 
+function cutLineLength(line: { x1: number; y1: number; x2: number; y2: number }): number {
+  return Math.round(Math.sqrt((line.x2 - line.x1) ** 2 + (line.y2 - line.y1) ** 2) * 10) / 10;
+}
+
 function calcToUrlCalc(calc: CalculationResult): UrlCalc {
+  const cl: UrlCutLine[] = calc.cutLines.map((line) => {
+    const entry: UrlCutLine = {
+      n: line.label,
+      ln: cutLineLength(line),
+      s: line.side === "back" ? 1 : 0,
+    };
+    if (line.disabled) entry.x = 1;
+    return entry;
+  });
+
   return {
     hc: calc.horizontalCuts,
     vc: calc.verticalCuts,
@@ -78,6 +101,7 @@ function calcToUrlCalc(calc: CalculationResult): UrlCalc {
     cs: calc.cutSurfaceArea,
     ue: calc.ueberschnitt,
     cv: calc.cornerVariant === "B" ? 1 : 0,
+    cl,
   };
 }
 

@@ -79,10 +79,10 @@
           "minimum": 1
         },
         "et": {
-          "type": "number",
-          "title": "Einstechtiefe (mm)",
-          "description": "Einstechtiefe des Sägeblatts an den Ecken in Millimetern",
-          "minimum": 0
+          "type": "string",
+          "title": "Einstechtiefe",
+          "description": "Einstechtiefe des Sägeblatts an den Ecken. 'm' = maximal (Standard), 'w' = Wandstärke",
+          "enum": ["m", "w"]
         },
         "bd": {
           "type": "number",
@@ -225,6 +225,47 @@
           "title": "Eckvariante",
           "description": "Bohrvariante an den Ecken. 0 = Variante A (1 Bohrung pro Ecke), 1 = Variante B (2 Bohrungen pro Ecke)",
           "enum": [0, 1]
+        },
+        "cl": {
+          "type": "array",
+          "title": "Einzelschnitte",
+          "description": "Liste aller einzelnen Schnittlinien mit jeweiliger Länge. Enthält sowohl Rand- als auch Teilungsschnitte, ggf. für Vorder- und Rückseite.",
+          "items": {
+            "$ref": "#/$defs/Schnittlinie"
+          }
+        }
+      }
+    },
+    "Schnittlinie": {
+      "type": "object",
+      "title": "Einzelne Schnittlinie",
+      "description": "Ein einzelner Schnitt mit Bezeichnung, Länge in mm und Seite. Horizontale Schnitte (Oben, Unten, H-Teilung) haben die Breite des Durchbruchs als Länge, vertikale Schnitte (Links, Rechts, V-Teilung) die Höhe.",
+      "required": ["n", "ln", "s"],
+      "additionalProperties": false,
+      "properties": {
+        "n": {
+          "type": "string",
+          "title": "Bezeichnung",
+          "description": "Label des Schnitts: 'Oben', 'Unten', 'Links', 'Rechts' für Randschnitte, 'H-Teilung 1', 'V-Teilung 1' etc. für Teilungsschnitte",
+          "examples": ["Oben", "Unten", "Links", "Rechts", "H-Teilung 1", "V-Teilung 1"]
+        },
+        "ln": {
+          "type": "number",
+          "title": "Länge (mm)",
+          "description": "Länge des Schnitts in Millimetern",
+          "minimum": 0
+        },
+        "s": {
+          "type": "integer",
+          "title": "Seite",
+          "description": "Von welcher Seite der Schnitt ausgeführt wird. 0 = Vorderseite, 1 = Rückseite (nur bei beidseitigem Schneiden)",
+          "enum": [0, 1]
+        },
+        "x": {
+          "type": "integer",
+          "title": "Deaktiviert",
+          "description": "Wenn 1, ist dieser Schnitt deaktiviert (z.B. weil die Seite offen ist). Wird weggelassen wenn der Schnitt aktiv ist.",
+          "enum": [1]
         }
       }
     }
