@@ -155,16 +155,20 @@ export function DimensionForm({
               <Label htmlFor="bladeDiameter">
                 Blattdurchmesser <span className="text-muted-foreground text-xs">(mm)</span>
               </Label>
-              <Input
+              <select
                 id="bladeDiameter"
-                type="number"
                 value={dimensions.bladeDiameter ?? ""}
                 onChange={(e) =>
                   updateDim("bladeDiameter", e.target.value ? Number(e.target.value) : undefined)
                 }
-                placeholder="z.B. 600"
-                min={0}
-              />
+                className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+              >
+                {[600, 800, 1000, 1200, 1400, 1600].map((size) => (
+                  <option key={size} value={size}>
+                    {size} mm
+                  </option>
+                ))}
+              </select>
               {dimensions.wallThickness > 0 && (
                 <p className="text-xs text-muted-foreground">
                   Empfohlen: {suggestBladeDiameter(dimensions.wallThickness)} mm

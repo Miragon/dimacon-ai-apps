@@ -127,7 +127,7 @@ export function CalculationResults({
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Eckbohrungen</span>
-            {editableField("cornerBoreHoles", calculation.cornerBoreHoles, "Eckbohrungen")}
+            <span>{calculation.cornerBoreHoles}</span>
           </div>
           {calculation.overlap > 0 && (
             <div className="flex items-center justify-between">
