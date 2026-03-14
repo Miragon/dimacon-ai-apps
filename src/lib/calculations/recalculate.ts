@@ -30,8 +30,7 @@ export function recalculateFromEdit(
     const vLm = (updated.verticalCuts * h) / 1000;
     const disabledHLm = disabledH * w / 1000;
     const disabledVLm = disabledV * h / 1000;
-    const sideFactor = updated.cutFromBothSides ? 2 : 1;
-    updated.totalLinearMeters = Math.round((hLm + vLm - disabledHLm - disabledVLm) * sideFactor * 100) / 100;
+    updated.totalLinearMeters = Math.round((hLm + vLm - disabledHLm - disabledVLm) * 100) / 100;
 
     updated.totalCuts = updated.horizontalCuts + updated.verticalCuts - disabledH - disabledV;
 
@@ -50,7 +49,7 @@ export function recalculateFromEdit(
     ) / 100;
 
     // Regenerate cut lines and bore hole positions for SVG
-    updated.cutLines = generateCutLines(w, h, updated.horizontalCuts, updated.verticalCuts, updated.cutFromBothSides, ds);
+    updated.cutLines = generateCutLines(w, h, updated.horizontalCuts, updated.verticalCuts, ds);
     updated.boreHolePositions = generateBoreHolePositions({
       widthMm: w,
       heightMm: h,

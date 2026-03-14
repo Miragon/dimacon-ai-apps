@@ -7,12 +7,11 @@ const FLANSCH_DISTANCE = 80; // mm (from 160mm flange diameter)
  */
 export function calculateUeberschnittA(
   wallThickness: number,
-  bladeDiameter: number,
-  cutFromBothSides: boolean
+  bladeDiameter: number
 ): number {
   const r = bladeDiameter / 2;
   const h = FLANSCH_DISTANCE;
-  const dEff = cutFromBothSides ? wallThickness / 2 : wallThickness;
+  const dEff = wallThickness;
 
   const inner1 = r * r - h * h;
   const inner2 = r * r - (dEff + h) * (dEff + h);
@@ -29,11 +28,10 @@ export function calculateUeberschnittA(
  */
 export function calculateUeberschnittB(
   wallThickness: number,
-  bladeDiameter: number,
-  cutFromBothSides: boolean
+  bladeDiameter: number
 ): number {
   const r = bladeDiameter / 2;
-  const dEff = cutFromBothSides ? wallThickness / 2 : wallThickness;
+  const dEff = wallThickness;
 
   const inner = 2 * r * dEff - dEff * dEff;
   if (inner < 0) return 0;

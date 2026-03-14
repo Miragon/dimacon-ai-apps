@@ -26,7 +26,7 @@ function hydratePositions(state: UrlState): Position[] {
       const h = pos.dimensions.height ?? 0;
       const ds = pos.dimensions.disabledSides;
       const cutLines = pos.shape === "rectangular"
-        ? generateCutLines(w, h, stored.horizontalCuts, stored.verticalCuts, stored.cutFromBothSides, ds)
+        ? generateCutLines(w, h, stored.horizontalCuts, stored.verticalCuts, ds)
         : [];
       const boreHolePositions = pos.shape === "rectangular"
         ? generateBoreHolePositions({

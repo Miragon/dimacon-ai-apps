@@ -58,7 +58,6 @@ export interface CalculationResult {
   cornerBoreHoles: number;
   estimatedMinutes: number;
   suggestedBladeSize: number;
-  cutFromBothSides: boolean;
   segments: number;
   cutLines: CutLine[];
   boreHolePositions: BoreHolePosition[];

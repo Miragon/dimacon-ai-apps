@@ -21,7 +21,6 @@ export function calculateCircularOpening(
       cornerBoreHoles: 0,
       estimatedMinutes,
       suggestedBladeSize: diameterMm,
-      cutFromBothSides: false,
       segments: 1,
       cutLines: [],
       boreHolePositions: [
@@ -64,7 +63,6 @@ export function calculateCircularOpening(
     cornerBoreHoles: 0,
     estimatedMinutes,
     suggestedBladeSize: MAX_CROWN_DIAMETER,
-    cutFromBothSides: false,
     segments: holesNeeded,
     cutLines: [],
     boreHolePositions,
