@@ -1,5 +1,5 @@
 import type { CalculationResult, Dimensions, MaterialType, PositionType, OpeningShape } from "@/types";
-import { estimateWallSawTime, estimateCoreDrillTime } from "./time-estimation";
+import { estimateRectangularTime, estimateDrillingTime } from "./time-estimation";
 import { generateCutLines } from "./rectangular";
 import { generateBoreHolePositions } from "./ueberschnitt";
 
@@ -68,11 +68,9 @@ export function recalculateFromEdit(
       updated.cornerBoreHoles = updated.boreHolePositions.length;
     }
 
-    updated.estimatedMinutes =
-      estimateWallSawTime(updated.totalLinearMeters, material) +
-      updated.cornerBoreHoles * 5;
+    updated.estimatedMinutes = estimateRectangularTime(updated.cutSurfaceArea, updated.totalCuts, updated.cornerBoreHoles);
   } else if (shape === "circular") {
-    updated.estimatedMinutes = estimateCoreDrillTime(updated.totalLinearMeters, material);
+    updated.estimatedMinutes = estimateDrillingTime(updated.segments);
   }
 
   return updated;

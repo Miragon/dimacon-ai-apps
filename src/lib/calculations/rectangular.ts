@@ -1,7 +1,7 @@
 import type { MaterialType, CalculationResult, CutLine, DisabledSides } from "@/types";
 import { needsCutFromBothSides, calculateSegmentWeight, calculateOverlap, MAX_SEGMENT_WEIGHT } from "./common";
 import { suggestBladeDiameter } from "./blade-suggestion";
-import { estimateWallSawTime } from "./time-estimation";
+import { estimateRectangularTime } from "./time-estimation";
 import {
   generateBoreHolePositions,
   calculateUeberschnittA,
@@ -153,15 +153,14 @@ export function calculateRectangularOpening(
   // Überlappung aus Wandstärke und Blattdurchmesser berechnen
   const overlap = Math.round(calculateOverlap(wallThickness, effectiveBlade) * 10) / 10;
 
-  // Time estimation
-  const estimatedMinutes = estimateWallSawTime(totalLinearMeters, material) +
-    cornerBoreHoles * 5; // ~5 min per bore hole
-
   // Schnittfläche: Gesamtlänge aller aktiven Schnittlinien × Wandstärke
   const activeCutLength = (horizontalCuts - disabledH) * widthMm + (verticalCuts - disabledV) * heightMm;
   const cutSurfaceArea = Math.round(
     activeCutLength * wallThickness / 1_000_000 * 100
   ) / 100;
+
+  // Time estimation
+  const estimatedMinutes = estimateRectangularTime(cutSurfaceArea, totalCuts, cornerBoreHoles);
 
   return {
     horizontalCuts,

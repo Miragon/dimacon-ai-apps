@@ -1,10 +1,13 @@
-import type { MaterialType } from "@/types";
-import { WALL_SAW_TIME, CORE_DRILL_TIME } from "./common";
+import { MINUTES_PER_M2_CUT_SURFACE, MINUTES_PER_CUT_RETOOLING, MINUTES_PER_DRILLING } from "./common";
 
-export function estimateWallSawTime(linearMeters: number, material: MaterialType): number {
-  return Math.round(linearMeters * WALL_SAW_TIME[material]);
+export function estimateRectangularTime(cutSurfaceArea: number, totalCuts: number, boreHoles: number): number {
+  return Math.round(
+    cutSurfaceArea * MINUTES_PER_M2_CUT_SURFACE +
+    totalCuts * MINUTES_PER_CUT_RETOOLING +
+    boreHoles * MINUTES_PER_DRILLING
+  );
 }
 
-export function estimateCoreDrillTime(linearMeters: number, material: MaterialType): number {
-  return Math.round(linearMeters * CORE_DRILL_TIME[material]);
+export function estimateDrillingTime(holeCount: number): number {
+  return Math.round(holeCount * MINUTES_PER_DRILLING);
 }

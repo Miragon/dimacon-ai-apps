@@ -1,5 +1,5 @@
 import type { MaterialType, CalculationResult } from "@/types";
-import { estimateCoreDrillTime } from "./time-estimation";
+import { estimateDrillingTime } from "./time-estimation";
 
 const MAX_CROWN_DIAMETER = 500; // mm
 
@@ -12,7 +12,7 @@ export function calculateCircularOpening(
 
   if (diameterMm <= MAX_CROWN_DIAMETER) {
     // Single core drill
-    const estimatedMinutes = estimateCoreDrillTime(linearMeters, material);
+    const estimatedMinutes = estimateDrillingTime(1);
     return {
       horizontalCuts: 0,
       verticalCuts: 0,
@@ -40,7 +40,7 @@ export function calculateCircularOpening(
   const circumference = Math.PI * diameterMm;
   const holesNeeded = Math.ceil(circumference / (MAX_CROWN_DIAMETER * 0.8));
   const totalLm = (holesNeeded * wallThickness) / 1000;
-  const estimatedMinutes = estimateCoreDrillTime(totalLm, material);
+  const estimatedMinutes = estimateDrillingTime(holesNeeded);
 
   const boreHolePositions = [];
   const radius = diameterMm / 2;

@@ -1,6 +1,6 @@
 import type { CalculationResult, MaterialType, Dimensions, PositionType, OpeningShape } from "@/types";
 import { MATERIAL_LABELS } from "@/types";
-import { MATERIAL_DENSITY, WALL_SAW_TIME, CORE_DRILL_TIME } from "@/lib/calculations/common";
+import { MATERIAL_DENSITY, MINUTES_PER_DRILLING, MINUTES_PER_M2_CUT_SURFACE, MINUTES_PER_CUT_RETOOLING } from "@/lib/calculations/common";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -27,12 +27,9 @@ function buildFormulaMap(
   const isCircular = shape === "circular";
 
   if (isCircular) {
-    const d = dimensions.diameter ?? 0;
-    const t = dimensions.wallThickness;
-    const timePerMeter = CORE_DRILL_TIME[material];
+    const holeCount = calculation.segments;
     return {
-      totalLinearMeters: `Durchmesser: ${d} mm, Bohrtiefe: ${t} mm = ${t / 1000} m`,
-      estimatedMinutes: `${calculation.totalLinearMeters} m × ${timePerMeter} min/m = ${calculation.estimatedMinutes} min`,
+      estimatedMinutes: `${holeCount} × ${MINUTES_PER_DRILLING} min = ${calculation.estimatedMinutes} min`,
     };
   }
 
@@ -44,15 +41,12 @@ function buildFormulaMap(
   const hM = h / 1000;
   const tM = t / 1000;
   const density = MATERIAL_DENSITY[material];
-  const timePerMeter = WALL_SAW_TIME[material];
   const volume = round3(wM * hM * tM);
   const weight = round1(volume * density);
   const sideFactor = calculation.cutFromBothSides ? 2 : 1;
   const hLm = (calculation.horizontalCuts * w) / 1000;
   const vLm = (calculation.verticalCuts * h) / 1000;
   const totalLm = round2((hLm + vLm) * sideFactor);
-  const sawTime = Math.round(totalLm * timePerMeter);
-  const boreTime = calculation.cornerBoreHoles * 5;
 
   const hCutDesc = calculation.horizontalCuts - 2 > 0
     ? `2 Basis + ${calculation.horizontalCuts - 2} Teilung`
@@ -63,11 +57,16 @@ function buildFormulaMap(
 
   const sideStr = sideFactor > 1 ? ` × ${sideFactor} (beidseitig)` : "";
 
-  const timeLines = [`Säge: ${totalLm} m × ${timePerMeter} min/m = ${sawTime} min`];
+  const cutSurfaceTime = round1(calculation.cutSurfaceArea * MINUTES_PER_M2_CUT_SURFACE);
+  const retoolingTime = calculation.totalCuts * MINUTES_PER_CUT_RETOOLING;
+  const boreTime = calculation.cornerBoreHoles * MINUTES_PER_DRILLING;
+
+  const timeLines = [`Schnittfläche: ${calculation.cutSurfaceArea} m² × ${MINUTES_PER_M2_CUT_SURFACE} min/m² = ${cutSurfaceTime} min`];
+  timeLines.push(`Umrüsten: ${calculation.totalCuts} Schnitte × ${MINUTES_PER_CUT_RETOOLING} min = ${retoolingTime} min`);
   if (calculation.cornerBoreHoles > 0) {
-    timeLines.push(`Bohrungen: ${calculation.cornerBoreHoles} × 5 min = ${boreTime} min`);
+    timeLines.push(`Bohrungen: ${calculation.cornerBoreHoles} × ${MINUTES_PER_DRILLING} min = ${boreTime} min`);
   }
-  timeLines.push(`Gesamt: ${sawTime + boreTime} min`);
+  timeLines.push(`Gesamt: ${calculation.estimatedMinutes} min`);
 
   const variantLabel = calculation.cornerVariant === "B"
     ? `Variante B: 2/Ecke × ${calculation.cornerBoreHoles / 2} Ecken`

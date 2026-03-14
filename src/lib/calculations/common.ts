@@ -10,25 +10,10 @@ export const MATERIAL_DENSITY: Record<MaterialType, number> = {
   naturstein: 2600,
 };
 
-// Time per linear meter in minutes (wall saw)
-export const WALL_SAW_TIME: Record<MaterialType, number> = {
-  beton: 8,
-  stahlbeton: 15,
-  mauerwerk: 5,
-  kalksandstein: 6,
-  ziegel: 5,
-  naturstein: 10,
-};
-
-// Time per linear meter for core drilling
-export const CORE_DRILL_TIME: Record<MaterialType, number> = {
-  beton: 12,
-  stahlbeton: 20,
-  mauerwerk: 8,
-  kalksandstein: 10,
-  ziegel: 8,
-  naturstein: 15,
-};
+// Time constants (material-independent)
+export const MINUTES_PER_DRILLING = 15;
+export const MINUTES_PER_M2_CUT_SURFACE = 12;
+export const MINUTES_PER_CUT_RETOOLING = 7;
 
 // Standard blade diameters in mm
 export const STANDARD_BLADE_SIZES = [350, 400, 450, 500, 600, 700, 800, 900, 1000, 1200];
