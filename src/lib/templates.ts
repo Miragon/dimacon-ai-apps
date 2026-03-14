@@ -9,7 +9,7 @@ export interface PositionTemplate {
 
 export const TEMPLATES: PositionTemplate[] = [
   {
-    label: "Standard-Tür 2x1 Meter",
+    label: "Standard-Tür 2x1m",
     description: "1000 × 2100 mm, Stahlbeton 300 mm",
     material: "stahlbeton",
     dimensions: {
