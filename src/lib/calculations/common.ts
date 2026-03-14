@@ -37,7 +37,7 @@ export const STANDARD_BLADE_SIZES = [350, 400, 450, 500, 600, 700, 800, 900, 100
 export const MAX_SEGMENT_WEIGHT = 150;
 
 export function calculateMaxCutDepth(bladeDiameter: number): number {
-  return (bladeDiameter - 120) / 2;
+  return (bladeDiameter - 160) / 2;
 }
 
 export function needsCutFromBothSides(wallThickness: number, bladeDiameter: number): boolean {

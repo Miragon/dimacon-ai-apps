@@ -88,7 +88,7 @@ export function calculateRectangularOpening(
   const ueberschnitt = Math.round(
     (cornerVariant === "A"
       ? calculateUeberschnittA(wallThickness, effectiveBlade, cutFromBothSides)
-      : calculateUeberschnittB(effectiveEinstechtiefe, effectiveBlade)
+      : calculateUeberschnittB(wallThickness, effectiveBlade, cutFromBothSides)
     ) * 10
   ) / 10;
 

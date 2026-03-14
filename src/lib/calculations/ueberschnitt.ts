@@ -1,5 +1,5 @@
 import type { BoreHolePosition, DisabledSides } from "@/types";
-const FLANSCH_DISTANCE = 60; // mm (from 120mm flange diameter)
+const FLANSCH_DISTANCE = 80; // mm (from 160mm flange diameter)
 
 /**
  * Geometrischer Überschnitt Variante A (maximal eingestochen).
@@ -24,28 +24,27 @@ export function calculateUeberschnittA(
 
 /**
  * Geometrischer Überschnitt Variante B (flach eingestochen).
- * Gleiche Bogenformel wie A, aber mit tatsächlicher Einstechtiefe statt d_eff.
+ * Halbsehnen-Formel: Ü_B = sqrt(2·r·dEff - dEff²)
+ * r = effektiver Blattradius (bladeDiameter/2 - FLANSCH_DISTANCE)
  */
 export function calculateUeberschnittB(
-  einstechtiefe: number,
+  wallThickness: number,
   bladeDiameter: number,
+  cutFromBothSides: boolean
 ): number {
-  const r = bladeDiameter / 2;
-  const h = FLANSCH_DISTANCE;
+  const r = bladeDiameter / 2 - FLANSCH_DISTANCE;
+  const dEff = cutFromBothSides ? wallThickness / 2 : wallThickness;
 
-  const inner1 = r * r - h * h;
-  const inner2 = r * r - (einstechtiefe + h) * (einstechtiefe + h);
+  const inner = 2 * r * dEff - dEff * dEff;
+  if (inner < 0) return 0;
 
-  if (inner1 < 0 || inner2 < 0) return 0;
-
-  return Math.sqrt(inner1) - Math.sqrt(inner2);
+  return Math.sqrt(inner);
 }
 
 /**
  * Automatische Varianten-Bestimmung basierend auf Einstechtiefe.
- * threshold = d_eff - boreRadius
- * einstechtiefe >= threshold → Variante A (1 Bohrung/Ecke)
- * einstechtiefe < threshold → Variante B (2 Bohrungen/Ecke)
+ * einstechtiefe + boreRadius >= dEff → Variante A (1 Bohrung/Ecke reicht)
+ * einstechtiefe + boreRadius < dEff → Variante B (2 Bohrungen/Ecke nötig)
  */
 export function determineCornerVariant(
   einstechtiefe: number,
@@ -55,9 +54,8 @@ export function determineCornerVariant(
 ): "A" | "B" {
   const dEff = cutFromBothSides ? wallThickness / 2 : wallThickness;
   const boreRadius = boreHoleDiameter / 2;
-  const threshold = dEff - boreRadius;
 
-  return einstechtiefe >= threshold ? "A" : "B";
+  return einstechtiefe + boreRadius >= dEff ? "A" : "B";
 }
 
 /**

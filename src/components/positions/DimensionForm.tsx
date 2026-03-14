@@ -154,9 +154,11 @@ export function DimensionForm({
               <select
                 id="bladeDiameter"
                 value={dimensions.bladeDiameter ?? ""}
-                onChange={(e) =>
-                  updateDim("bladeDiameter", e.target.value ? Number(e.target.value) : undefined)
-                }
+                onChange={(e) => {
+                  const newBlade = e.target.value ? Number(e.target.value) : undefined;
+                  const newMax = Math.round(calculateMaxCutDepth(newBlade ?? 0));
+                  onDimensionsChange({ ...dimensions, bladeDiameter: newBlade, einstechtiefe: newMax });
+                }}
                 className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
               >
                 {[600, 800, 1000, 1200, 1400, 1600].map((size) => (
@@ -172,11 +174,7 @@ export function DimensionForm({
               )}
             </div>
             {(() => {
-              const effectiveBlade = Math.max(
-                dimensions.bladeDiameter,
-                dimensions.wallThickness > 0 ? suggestBladeDiameter(dimensions.wallThickness) : 0
-              );
-              const maxCutDepth = calculateMaxCutDepth(effectiveBlade);
+              const maxCutDepth = calculateMaxCutDepth(dimensions.bladeDiameter ?? 0);
               return (
                 <div className="grid gap-1.5">
                   <Label htmlFor="einstechtiefe">
