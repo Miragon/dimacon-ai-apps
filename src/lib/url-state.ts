@@ -1,4 +1,4 @@
-import type { Position, MaterialType, DisabledSides } from "@/types";
+import type { Position, MaterialType, DisabledSides, CalculationResult } from "@/types";
 
 export interface UrlState {
   n: string; // name
@@ -16,8 +16,25 @@ export interface UrlPosition {
   sw?: number; // maxSegmentWeight (kg)
   ds?: string; // disabledSides as "0110" bitmask (top,bottom,left,right)
   nt?: string; // notes
-  hc?: number; // horizontalCuts (saved calculation)
-  vc?: number; // verticalCuts (saved calculation)
+  // Stored calculation values:
+  c?: UrlCalc;
+}
+
+/** Compact calculation – everything needed to restore without recalculating */
+export interface UrlCalc {
+  hc: number; // horizontalCuts
+  vc: number; // verticalCuts
+  tc: number; // totalCuts
+  lm: number; // totalLinearMeters
+  cb: number; // cornerBoreHoles
+  em: number; // estimatedMinutes
+  sb: number; // suggestedBladeSize
+  bs: number; // cutFromBothSides (0/1)
+  sg: number; // segments
+  tw: number; // totalWeight
+  wt: number; // segmentWeight
+  ol: number; // overlap
+  cs: number; // cutSurfaceArea
 }
 
 function disabledSidesToBitmask(ds?: DisabledSides): string | undefined {
@@ -40,6 +57,42 @@ function bitmaskToDisabledSides(bits?: string): DisabledSides | undefined {
   return Object.keys(ds).length > 0 ? ds : undefined;
 }
 
+function calcToUrlCalc(calc: CalculationResult): UrlCalc {
+  return {
+    hc: calc.horizontalCuts,
+    vc: calc.verticalCuts,
+    tc: calc.totalCuts,
+    lm: calc.totalLinearMeters,
+    cb: calc.cornerBoreHoles,
+    em: calc.estimatedMinutes,
+    sb: calc.suggestedBladeSize,
+    bs: calc.cutFromBothSides ? 1 : 0,
+    sg: calc.segments,
+    tw: calc.totalWeight,
+    wt: calc.segmentWeight,
+    ol: calc.overlap,
+    cs: calc.cutSurfaceArea,
+  };
+}
+
+export function urlCalcToCalc(uc: UrlCalc): Omit<CalculationResult, "cutLines" | "boreHolePositions"> {
+  return {
+    horizontalCuts: uc.hc,
+    verticalCuts: uc.vc,
+    totalCuts: uc.tc,
+    totalLinearMeters: uc.lm,
+    cornerBoreHoles: uc.cb,
+    estimatedMinutes: uc.em,
+    suggestedBladeSize: uc.sb,
+    cutFromBothSides: uc.bs === 1,
+    segments: uc.sg,
+    totalWeight: uc.tw,
+    segmentWeight: uc.wt,
+    overlap: uc.ol,
+    cutSurfaceArea: uc.cs,
+  };
+}
+
 export function positionToUrlPos(p: Position): UrlPosition {
   const up: UrlPosition = {
     l: p.label,
@@ -57,8 +110,7 @@ export function positionToUrlPos(p: Position): UrlPosition {
   if (dsBits) up.ds = dsBits;
   if (p.notes) up.nt = p.notes;
   if (p.calculation) {
-    up.hc = p.calculation.horizontalCuts;
-    up.vc = p.calculation.verticalCuts;
+    up.c = calcToUrlCalc(p.calculation);
   }
   return up;
 }
@@ -79,7 +131,7 @@ export function urlPosToPosition(up: UrlPosition, index: number): Position {
       disabledSides: bitmaskToDisabledSides(up.ds),
     },
     material: up.m as MaterialType,
-    calculation: null, // will be recalculated
+    calculation: null, // hydrated separately
     notes: up.nt ?? "",
     sortOrder: index,
   };
@@ -87,21 +139,17 @@ export function urlPosToPosition(up: UrlPosition, index: number): Position {
 
 export function encodeState(state: UrlState): string {
   const json = JSON.stringify(state);
-  // btoa with unicode support
   const bytes = new TextEncoder().encode(json);
   let binary = "";
   for (const byte of bytes) {
     binary += String.fromCharCode(byte);
   }
-  // base64url encoding (no padding, url-safe chars)
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 export function decodeState(encoded: string): UrlState | null {
   try {
-    // Restore standard base64
     let b64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
-    // Add padding
     while (b64.length % 4 !== 0) b64 += "=";
     const binary = atob(b64);
     const bytes = new Uint8Array(binary.length);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Download, ArrowLeft, Trash2, RotateCcw, RefreshCw, Save } from "lucide-react";
+import { Plus, Download, ArrowLeft, Trash2, RefreshCw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -250,11 +250,22 @@ function PositionEditor({
     }
   );
   const [notes, setNotes] = useState(existingPosition?.notes ?? "");
-  const [displayedCalc, setDisplayedCalc] = useState<CalculationResult | null>(
-    existingPosition?.calculation ?? null
-  );
-  const [hasManualEdits, setHasManualEdits] = useState(false);
-  const [needsRecalc, setNeedsRecalc] = useState(false);
+  const [calculation, setCalculation] = useState<CalculationResult>(() => {
+    if (existingPosition?.calculation) return existingPosition.calculation;
+    // First time: calculate initial values
+    const tempPos: Position = {
+      id: "temp",
+      type: positionType,
+      label: label || "Vorschau",
+      shape,
+      dimensions,
+      material,
+      calculation: null,
+      notes: "",
+      sortOrder: positions.length,
+    };
+    return calculatePosition(tempPos);
+  });
 
   if (isEditMode && !existingPosition) {
     return (
@@ -267,23 +278,7 @@ function PositionEditor({
     );
   }
 
-  const tempPosition: Position = {
-    id: existingPosition?.id ?? "temp",
-    type: positionType,
-    label: label || "Vorschau",
-    shape,
-    dimensions,
-    material,
-    calculation: null,
-    notes,
-    sortOrder: existingPosition?.sortOrder ?? positions.length,
-  };
-
-  const autoCalc = calculatePosition(tempPosition);
-  const calculation = displayedCalc ?? autoCalc;
-
   const handleFieldChange = (field: keyof CalculationResult, value: number) => {
-    if (!calculation) return;
     const recalculated = recalculateFromEdit(
       calculation,
       field,
@@ -293,8 +288,7 @@ function PositionEditor({
       positionType,
       shape
     );
-    setDisplayedCalc(recalculated);
-    setHasManualEdits(true);
+    setCalculation(recalculated);
   };
 
   const handleToggleSide = (side: keyof DisabledSides) => {
@@ -311,34 +305,30 @@ function PositionEditor({
       positionType,
       shape
     );
-    setDisplayedCalc(recalculated);
+    setCalculation(recalculated);
   };
 
   const handleDimensionsChange = (dims: Dimensions) => {
-    if (!needsRecalc) {
-      setDisplayedCalc(calculation);
-    }
     setDimensions(dims);
-    setNeedsRecalc(true);
   };
 
   const handleMaterialChange = (mat: MaterialType) => {
-    if (!needsRecalc) {
-      setDisplayedCalc(calculation);
-    }
     setMaterial(mat);
-    setNeedsRecalc(true);
   };
 
   const handleRecalculate = () => {
-    setDisplayedCalc(null);
-    setNeedsRecalc(false);
-    setHasManualEdits(false);
-  };
-
-  const handleResetCalc = () => {
-    setDisplayedCalc(null);
-    setHasManualEdits(false);
+    const tempPos: Position = {
+      id: existingPosition?.id ?? "temp",
+      type: positionType,
+      label: label || "Vorschau",
+      shape,
+      dimensions,
+      material,
+      calculation: null,
+      notes,
+      sortOrder: existingPosition?.sortOrder ?? positions.length,
+    };
+    setCalculation(calculatePosition(tempPos));
   };
 
   const handleSave = () => {
@@ -382,18 +372,6 @@ function PositionEditor({
             {isEditMode ? `Position #${editIndex + 1}` : "Maße & Berechnung"}
           </p>
         </div>
-        {needsRecalc && (
-          <Button variant="outline" onClick={handleRecalculate}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Neu berechnen
-          </Button>
-        )}
-        {hasManualEdits && !needsRecalc && (
-          <Button variant="outline" onClick={handleResetCalc}>
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Zurücksetzen
-          </Button>
-        )}
         <Button onClick={handleSave}>
           <Save className="mr-2 h-4 w-4" />
           {isEditMode ? "Speichern" : "Position speichern"}
@@ -415,6 +393,12 @@ function PositionEditor({
         onLabelChange={setLabel}
         notes={notes}
         onNotesChange={setNotes}
+        headerAction={
+          <Button variant="outline" size="sm" onClick={handleRecalculate}>
+            <RefreshCw className="mr-2 h-3.5 w-3.5" />
+            Neu berechnen
+          </Button>
+        }
       />
 
       <div className="grid gap-4 lg:grid-cols-2">

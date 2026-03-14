@@ -5,25 +5,37 @@ import {
   decodeState,
   positionToUrlPos,
   urlPosToPosition,
+  urlCalcToCalc,
   EMPTY_STATE,
   type UrlState,
 } from "@/lib/url-state";
 import { calculatePosition } from "@/lib/calculations";
-import type { Position } from "@/types";
+import { generateCutLines, generateBoreHolePositions } from "@/lib/calculations/rectangular";
+import type { Position, CalculationResult } from "@/types";
 import type { PositionTemplate } from "@/lib/templates";
 
 function hydratePositions(state: UrlState): Position[] {
   return state.p.map((up, i) => {
     const pos = urlPosToPosition(up, i);
-    // Recalculate from saved hc/vc or fresh
-    const calc = calculatePosition(pos);
-    // If saved hc/vc differ from auto-calc, use saved values
-    if (up.hc != null && up.vc != null) {
-      calc.horizontalCuts = up.hc;
-      calc.verticalCuts = up.vc;
-      calc.totalCuts = up.hc + up.vc;
+
+    if (up.c) {
+      // Restore saved calculation, regenerate visual arrays
+      const stored = urlCalcToCalc(up.c);
+      const w = pos.dimensions.width ?? 0;
+      const h = pos.dimensions.height ?? 0;
+      const ds = pos.dimensions.disabledSides;
+      const cutLines = pos.shape === "rectangular"
+        ? generateCutLines(w, h, stored.horizontalCuts, stored.verticalCuts, stored.cutFromBothSides, ds)
+        : [];
+      const boreHolePositions = pos.shape === "rectangular"
+        ? generateBoreHolePositions(w, h, stored.horizontalCuts, stored.verticalCuts, ds)
+        : [];
+      pos.calculation = { ...stored, cutLines, boreHolePositions } as CalculationResult;
+    } else {
+      // No saved calculation — fresh calc (first time)
+      pos.calculation = calculatePosition(pos);
     }
-    pos.calculation = calc;
+
     return pos;
   });
 }
@@ -50,11 +62,9 @@ export function useUrlState() {
   const updateState = useCallback(
     (newState: UrlState, replace = false) => {
       const params = new URLSearchParams();
-      // Only set s if there's actual data
       if (newState.n || newState.p.length > 0) {
         params.set("s", encodeState(newState));
       }
-      // Preserve e param if present and not replacing
       const e = searchParams.get("e");
       if (e !== null && !replace) {
         params.set("e", e);
@@ -79,7 +89,6 @@ export function useUrlState() {
       };
       const params = new URLSearchParams();
       params.set("s", encodeState(newState));
-      // Navigate back to list (remove e param)
       setSearchParams(params);
     },
     [state, setSearchParams]
@@ -106,7 +115,6 @@ export function useUrlState() {
       if (newState.n || newState.p.length > 0) {
         params.set("s", encodeState(newState));
       }
-      // Navigate back to list (remove e param)
       setSearchParams(params);
     },
     [state, setSearchParams]
@@ -140,8 +148,7 @@ export function useUrlState() {
         notes: "",
         sortOrder: state.p.length,
       };
-      const calc = calculatePosition(position);
-      position.calculation = calc;
+      position.calculation = calculatePosition(position);
       const newState: UrlState = {
         ...state,
         p: [...state.p, positionToUrlPos(position)],
