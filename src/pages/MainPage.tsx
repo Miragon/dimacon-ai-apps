@@ -16,7 +16,6 @@ import { calculatePosition } from "@/lib/calculations";
 import { recalculateFromEdit } from "@/lib/calculations/recalculate";
 import { TEMPLATES } from "@/lib/templates";
 import { MATERIAL_LABELS } from "@/types";
-import { formatMinutes } from "@/lib/utils";
 import type {
   MaterialType,
   Dimensions,
@@ -155,7 +154,7 @@ function ListView({
             </div>
             <div>
               <p className="text-muted-foreground">Geschätzte Zeit</p>
-              <p className="text-lg font-semibold">{formatMinutes(totalMinutes)}</p>
+              <p className="text-lg font-semibold">{totalMinutes} Min.</p>
             </div>
           </CardContent>
         </Card>
