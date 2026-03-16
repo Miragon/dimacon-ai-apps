@@ -133,7 +133,7 @@
       "type": "object",
       "title": "Berechnungsergebnis",
       "description": "Kompaktes Berechnungsergebnis mit allen Schnitt- und Bohrungsdaten",
-      "required": ["hc", "vc", "tc", "lm", "cb", "em", "sb", "sg", "tw", "wt", "ol", "cs", "ue", "cv"],
+      "required": ["hc", "vc", "tc", "lm", "cb", "em", "sb", "bs", "sg", "tw", "wt", "ol", "cs", "ue", "cv"],
       "additionalProperties": false,
       "properties": {
         "hc": {
@@ -177,6 +177,12 @@
           "title": "Empfohlene Blattgröße (mm)",
           "description": "Empfohlener Sägeblattdurchmesser in Millimetern",
           "minimum": 0
+        },
+        "bs": {
+          "type": "integer",
+          "title": "Beidseitig schneiden",
+          "description": "Ob von beiden Seiten geschnitten wird. 0 = nein (einseitig), 1 = ja (beidseitig)",
+          "enum": [0, 1]
         },
         "sg": {
           "type": "number",

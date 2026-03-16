@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { Scissors, Ruler, Clock, Circle, Layers, Weight, Square, EyeOff, Crosshair } from "lucide-react";
+import { Scissors, Ruler, Clock, Circle, Layers, ArrowLeftRight, Weight, Square, EyeOff, Crosshair } from "lucide-react";
 
 interface CalculationResultsProps {
   calculation: CalculationResult;
@@ -43,9 +43,10 @@ function buildFormulaMap(
   const density = MATERIAL_DENSITY[material];
   const volume = round3(wM * hM * tM);
   const weight = round1(volume * density);
+  const sideFactor = calculation.cutFromBothSides ? 2 : 1;
   const hLm = (calculation.horizontalCuts * w) / 1000;
   const vLm = (calculation.verticalCuts * h) / 1000;
-  const totalLm = round2(hLm + vLm);
+  const totalLm = round2((hLm + vLm) * sideFactor);
 
   const hCutDesc = calculation.horizontalCuts - 2 > 0
     ? `2 Basis + ${calculation.horizontalCuts - 2} Teilung`
@@ -53,6 +54,8 @@ function buildFormulaMap(
   const vCutDesc = calculation.verticalCuts - 2 > 0
     ? `2 Basis + ${calculation.verticalCuts - 2} Teilung`
     : "2 Basis";
+
+  const sideStr = sideFactor > 1 ? ` × ${sideFactor} (beidseitig)` : "";
 
   const cutSurfaceTime = round1(calculation.cutSurfaceArea * MINUTES_PER_M2_CUT_SURFACE);
   const retoolingTime = calculation.totalCuts * MINUTES_PER_CUT_RETOOLING;
@@ -71,7 +74,7 @@ function buildFormulaMap(
 
   return {
     totalCuts: `${calculation.horizontalCuts} + ${calculation.verticalCuts} = ${calculation.totalCuts}`,
-    totalLinearMeters: `(${calculation.horizontalCuts}×${wM} + ${calculation.verticalCuts}×${hM}) = ${totalLm} m`,
+    totalLinearMeters: `(${calculation.horizontalCuts}×${wM} + ${calculation.verticalCuts}×${hM})${sideStr} = ${totalLm} m`,
     cutSurfaceArea: `(${calculation.horizontalCuts}×${w} + ${calculation.verticalCuts}×${h}) × ${t} / 1.000.000 = ${calculation.cutSurfaceArea} m²`,
     estimatedMinutes: timeLines.join("\n"),
     cornerBoreHoles: `${calculation.cornerBoreHoles} (${variantLabel})`,
@@ -229,6 +232,12 @@ export function CalculationResults({
             <Badge variant={calculation.cornerVariant === "B" ? "default" : "secondary"} className="text-xs">
               <Circle className="mr-1 h-3 w-3" />
               Variante {calculation.cornerVariant} ({calculation.cornerVariant === "A" ? "1 Bohrung/Ecke" : "2 Bohrungen/Ecke"})
+            </Badge>
+          )}
+          {calculation.cutFromBothSides && (
+            <Badge variant="secondary" className="text-xs">
+              <ArrowLeftRight className="mr-1 h-3 w-3" />
+              Beidseitig
             </Badge>
           )}
           {calculation.segments > 1 && (

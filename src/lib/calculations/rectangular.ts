@@ -1,5 +1,5 @@
 import type { MaterialType, CalculationResult, CutLine, DisabledSides } from "../../types";
-import { calculateSegmentWeight, calculateOverlap, MAX_SEGMENT_WEIGHT } from "./common";
+import { needsCutFromBothSides, calculateSegmentWeight, calculateOverlap, MAX_SEGMENT_WEIGHT } from "./common";
 import { suggestBladeDiameter } from "./blade-suggestion";
 import { estimateRectangularTime } from "./time-estimation";
 import {
@@ -22,6 +22,7 @@ export function generateCutLines(
   heightMm: number,
   horizontalCuts: number,
   verticalCuts: number,
+  cutFromBothSides: boolean,
   disabledSides?: DisabledSides
 ): CutLine[] {
   const lines: CutLine[] = [];
@@ -44,6 +45,13 @@ export function generateCutLines(
     const sideKey = SIDE_LABEL_MAP[label];
     const disabled = sideKey ? !!disabledSides?.[sideKey] : false;
     lines.push({ x1: x, y1: 0, x2: x, y2: heightMm, label, side: "front", disabled });
+  }
+
+  if (cutFromBothSides) {
+    const frontLines = [...lines];
+    for (const line of frontLines) {
+      lines.push({ ...line, side: "back" });
+    }
   }
 
   return lines;
@@ -86,12 +94,13 @@ export function calculateRectangularOpening(
 ): CalculationResult {
   const suggestedBladeSize = suggestBladeDiameter(wallThickness);
   const effectiveBlade = Math.max(bladeDiameter, suggestedBladeSize);
+  const cutFromBothSides = needsCutFromBothSides(wallThickness, effectiveBlade);
 
   // Variante bestimmen und Überschnitt berechnen
   const cornerVariant = determineCornerVariant(einstechtiefe);
   const ueberschnittRaw = cornerVariant === "A"
-    ? calculateUeberschnittA(wallThickness, effectiveBlade)
-    : calculateUeberschnittB(wallThickness, effectiveBlade);
+    ? calculateUeberschnittA(wallThickness, effectiveBlade, cutFromBothSides)
+    : calculateUeberschnittB(wallThickness, effectiveBlade, cutFromBothSides);
   const ueberschnitt = Math.round(ueberschnittRaw / 10) * 10;
 
   // Base cuts: 2 horizontal (top + bottom) + 2 vertical (left + right)
@@ -123,10 +132,12 @@ export function calculateRectangularOpening(
   const disabledHLm = disabledH * widthMm / 1000;
   const disabledVLm = disabledV * heightMm / 1000;
 
-  let totalLinearMeters = horizontalLm + verticalLm - disabledHLm - disabledVLm;
+  // Double if cutting from both sides
+  const sideFactor = cutFromBothSides ? 2 : 1;
+  let totalLinearMeters = (horizontalLm + verticalLm - disabledHLm - disabledVLm) * sideFactor;
 
   // Generate cut lines and bore hole positions for SVG preview
-  const cutLines = generateCutLines(widthMm, heightMm, horizontalCuts, verticalCuts, disabledSides);
+  const cutLines = generateCutLines(widthMm, heightMm, horizontalCuts, verticalCuts, cutFromBothSides, disabledSides);
   const boreHolePositions = generateBoreHolePositions({
     widthMm,
     heightMm,
@@ -159,6 +170,7 @@ export function calculateRectangularOpening(
     cornerBoreHoles,
     estimatedMinutes,
     suggestedBladeSize: effectiveBlade,
+    cutFromBothSides,
     segments,
     cutLines,
     boreHolePositions,

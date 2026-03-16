@@ -39,6 +39,7 @@ export interface UrlCalc {
   cb: number; // cornerBoreHoles
   em: number; // estimatedMinutes
   sb: number; // suggestedBladeSize
+  bs: number; // cutFromBothSides (0/1)
   sg: number; // segments
   tw: number; // totalWeight
   wt: number; // segmentWeight
@@ -92,6 +93,7 @@ function calcToUrlCalc(calc: CalculationResult): UrlCalc {
     cb: calc.cornerBoreHoles,
     em: calc.estimatedMinutes,
     sb: calc.suggestedBladeSize,
+    bs: calc.cutFromBothSides ? 1 : 0,
     sg: calc.segments,
     tw: calc.totalWeight,
     wt: calc.segmentWeight,
@@ -112,6 +114,7 @@ export function urlCalcToCalc(uc: UrlCalc): Omit<CalculationResult, "cutLines" |
     cornerBoreHoles: uc.cb,
     estimatedMinutes: uc.em,
     suggestedBladeSize: uc.sb,
+    cutFromBothSides: uc.bs === 1,
     segments: uc.sg,
     totalWeight: uc.tw,
     segmentWeight: uc.wt,

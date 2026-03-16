@@ -99,11 +99,13 @@ server.addTool({
   execute: async (args) => {
     const suggested = suggestBladeDiameter(args.wall_thickness_mm);
     const maxCutDepth = (suggested - 160) / 2;
+    const needsBothSides = args.wall_thickness_mm > maxCutDepth;
 
     return JSON.stringify({
       wall_thickness_mm: args.wall_thickness_mm,
       suggested_blade_diameter_mm: suggested,
       max_cut_depth_mm: maxCutDepth,
+      cut_from_both_sides: needsBothSides,
     }, null, 2);
   },
 });
