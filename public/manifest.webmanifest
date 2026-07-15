@@ -1,0 +1,15 @@
+{
+  "name": "Dimacon Durchbruch-Kalkulator",
+  "short_name": "Durchbruch",
+  "description": "Bohr- und Sägeassistent für Wanddurchbrüche – funktioniert offline.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    { "src": "/pwa-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

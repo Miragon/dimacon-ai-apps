@@ -48,12 +48,14 @@ export function DimensionForm({
       <Input
         id={id}
         type="number"
+        inputMode="numeric"
         value={dimensions[key] ?? ""}
         onChange={(e) =>
           updateDim(key, e.target.value ? Number(e.target.value) : undefined)
         }
         placeholder={placeholder}
         min={0}
+        className="h-11 sm:h-9"
       />
     </div>
   );
@@ -134,12 +136,14 @@ export function DimensionForm({
               <Input
                 id="maxSegmentWeight"
                 type="number"
+                inputMode="numeric"
                 value={dimensions.maxSegmentWeight ?? ""}
                 onChange={(e) =>
                   updateDim("maxSegmentWeight", e.target.value ? Number(e.target.value) : undefined)
                 }
                 placeholder="z.B. 150"
                 min={1}
+                className="h-11 sm:h-9"
               />
             </div>
           </div>
@@ -156,7 +160,7 @@ export function DimensionForm({
                 onChange={(e) => {
                   onDimensionsChange({ ...dimensions, bladeDiameter: Number(e.target.value) });
                 }}
-                className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                className="h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-9"
               >
                 {[600, 800, 1000, 1200, 1400, 1600].map((size) => (
                   <option key={size} value={size}>
@@ -183,7 +187,7 @@ export function DimensionForm({
                     onChange={(e) =>
                       updateDim("einstechtiefe", e.target.value as "maximal" | "wandstaerke")
                     }
-                    className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                    className="h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-9"
                   >
                     <option value="maximal">Maximal ({maxDepth} mm)</option>
                     <option value="wandstaerke">Bis Wandstärke ({dimensions.wallThickness ?? 0} mm)</option>
@@ -201,7 +205,7 @@ export function DimensionForm({
                 onChange={(e) =>
                   updateDim("boreHoleDiameter", Number(e.target.value))
                 }
-                className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                className="h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-9"
               >
                 {[100, 150, 200, 250].map((size) => (
                   <option key={size} value={size}>
@@ -213,7 +217,7 @@ export function DimensionForm({
           </div>
 
           {onSubmit && (
-            <Button type="submit" className="w-1/2">
+            <Button type="submit" size="lg" className="h-11 w-full sm:h-9 sm:w-1/2">
               <RefreshCw className="mr-2 h-4 w-4" />
               Neu berechnen
             </Button>
