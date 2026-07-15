@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { Scissors, Ruler, Clock, Circle, Layers, ArrowLeftRight, Weight, Square, EyeOff, Crosshair } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Scissors, Ruler, Clock, Circle, Layers, ArrowLeftRight, Weight, Square, EyeOff, Crosshair, Info } from "lucide-react";
 
 interface CalculationResultsProps {
   calculation: CalculationResult;
@@ -115,9 +115,10 @@ export function CalculationResults({
     return (
       <Input
         type="number"
+        inputMode="numeric"
         value={displayValue}
         onChange={(e) => onFieldChange?.(field, Number(e.target.value) + offset)}
-        className="h-7 w-20 text-right"
+        className="h-11 w-24 text-right sm:h-9 sm:w-20"
         min={0}
         aria-label={label}
       />
@@ -284,6 +285,22 @@ function round1(n: number) { return Math.round(n * 10) / 10; }
 function round2(n: number) { return Math.round(n * 100) / 100; }
 function round3(n: number) { return Math.round(n * 1000) / 1000; }
 
+function FormulaInfo({ formula, label }: { formula: string; label: string }) {
+  return (
+    <Popover>
+      <PopoverTrigger
+        className="-m-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        aria-label={`Rechenweg für ${label} anzeigen`}
+      >
+        <Info className="h-4 w-4" />
+      </PopoverTrigger>
+      <PopoverContent className="w-auto font-mono text-xs whitespace-pre-wrap">
+        {formula}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function ResultItem({
   icon,
   label,
@@ -295,27 +312,19 @@ function ResultItem({
   value: string;
   formula?: string;
 }) {
-  const content = (
+  return (
     <div className="flex items-center gap-2 rounded-lg border p-2">
       <div className="text-muted-foreground">{icon}</div>
-      <div>
+      <div className="min-w-0">
         <p className="text-xs text-muted-foreground">{label}</p>
         <p className="text-base font-semibold">{value}</p>
       </div>
+      {formula && (
+        <div className="ml-auto self-start">
+          <FormulaInfo formula={formula} label={label} />
+        </div>
+      )}
     </div>
-  );
-
-  if (!formula) return content;
-
-  return (
-    <Tooltip>
-      <TooltipTrigger className="w-full text-left cursor-default">
-        {content}
-      </TooltipTrigger>
-      <TooltipContent className="max-w-md font-mono text-xs whitespace-pre-wrap">
-        {formula}
-      </TooltipContent>
-    </Tooltip>
   );
 }
 
@@ -328,23 +337,13 @@ function DetailRow({
   formula?: string;
   children: React.ReactNode;
 }) {
-  const row = (
-    <div className="flex items-center justify-between">
-      <span className="text-muted-foreground">{label}</span>
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="flex items-center gap-1 text-muted-foreground">
+        {label}
+        {formula && <FormulaInfo formula={formula} label={label} />}
+      </span>
       {children}
     </div>
-  );
-
-  if (!formula) return row;
-
-  return (
-    <Tooltip>
-      <TooltipTrigger className="w-full text-left cursor-default">
-        {row}
-      </TooltipTrigger>
-      <TooltipContent className="max-w-md font-mono text-xs whitespace-pre-wrap">
-        {formula}
-      </TooltipContent>
-    </Tooltip>
   );
 }

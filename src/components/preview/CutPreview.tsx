@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CalculationResult, Dimensions, PositionType, OpeningShape, DisabledSides } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { RotateCcw } from "lucide-react";
 
 // --- Pan & Zoom hook ---
 
@@ -12,27 +14,29 @@ interface ViewBox {
 }
 
 function usePanZoom(initialWidth: number, initialHeight: number) {
-  const initial: ViewBox = { x: 0, y: 0, width: initialWidth, height: initialHeight };
-  const [viewBox, setViewBox] = useState<ViewBox>(initial);
+  const [viewBox, setViewBox] = useState<ViewBox>({ x: 0, y: 0, width: initialWidth, height: initialHeight });
   const [isPanning, setIsPanning] = useState(false);
-  const panStart = useRef<{ x: number; y: number; vbX: number; vbY: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+
+  // Active pointers (id -> client coords) for multi-touch pinch support
+  const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const panStart = useRef<{ x: number; y: number; vbX: number; vbY: number } | null>(null);
+  const pinchStart = useRef<{ dist: number; centerSVG: { x: number; y: number }; vb: ViewBox } | null>(null);
 
   const isZoomed = viewBox.width < initialWidth - 0.5 || viewBox.height < initialHeight - 0.5;
 
-  const screenToSVG = useCallback(
-    (clientX: number, clientY: number): { x: number; y: number } => {
+  // Map client coords to SVG coords for a given viewBox
+  const clientToSVG = useCallback(
+    (clientX: number, clientY: number, vb: ViewBox): { x: number; y: number } => {
       const svg = svgRef.current;
       if (!svg) return { x: 0, y: 0 };
       const rect = svg.getBoundingClientRect();
-      const scaleX = viewBox.width / rect.width;
-      const scaleY = viewBox.height / rect.height;
       return {
-        x: viewBox.x + (clientX - rect.left) * scaleX,
-        y: viewBox.y + (clientY - rect.top) * scaleY,
+        x: vb.x + ((clientX - rect.left) / rect.width) * vb.width,
+        y: vb.y + ((clientY - rect.top) / rect.height) * vb.height,
       };
     },
-    [viewBox],
+    [],
   );
 
   // Clamp viewBox so it stays within bounds
@@ -51,7 +55,7 @@ function usePanZoom(initialWidth: number, initialHeight: number) {
   const wheelHandler = useCallback(
     (e: WheelEvent) => {
       e.preventDefault();
-      const pt = screenToSVG(e.clientX, e.clientY);
+      const pt = clientToSVG(e.clientX, e.clientY, viewBox);
       const factor = e.deltaY > 0 ? 1.05 : 0.95;
       const newWidth = viewBox.width * factor;
       const newHeight = viewBox.height * factor;
@@ -59,7 +63,7 @@ function usePanZoom(initialWidth: number, initialHeight: number) {
       const newY = pt.y - (pt.y - viewBox.y) * (newHeight / viewBox.height);
       setViewBox(clampViewBox({ x: newX, y: newY, width: newWidth, height: newHeight }));
     },
-    [viewBox, screenToSVG, clampViewBox],
+    [viewBox, clientToSVG, clampViewBox],
   );
 
   useEffect(() => {
@@ -71,52 +75,104 @@ function usePanZoom(initialWidth: number, initialHeight: number) {
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
-      // Only pan on primary button & when zoomed in
-      if (e.button !== 0 || !isZoomed) return;
-      setIsPanning(true);
-      panStart.current = { x: e.clientX, y: e.clientY, vbX: viewBox.x, vbY: viewBox.y };
+      if (e.button !== 0) return;
       (e.target as Element).setPointerCapture(e.pointerId);
+      pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (pointers.current.size === 2) {
+        // Begin pinch: capture initial finger distance & midpoint
+        const pts = [...pointers.current.values()];
+        const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+        const cx = (pts[0].x + pts[1].x) / 2;
+        const cy = (pts[0].y + pts[1].y) / 2;
+        pinchStart.current = { dist: dist || 1, centerSVG: clientToSVG(cx, cy, viewBox), vb: viewBox };
+        panStart.current = null;
+        setIsPanning(false);
+      } else if (pointers.current.size === 1 && isZoomed) {
+        // Single finger pans when zoomed in
+        panStart.current = { x: e.clientX, y: e.clientY, vbX: viewBox.x, vbY: viewBox.y };
+        setIsPanning(true);
+      }
     },
-    [viewBox, isZoomed],
+    [viewBox, isZoomed, clientToSVG],
   );
 
   const onPointerMove = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
-      if (!isPanning || !panStart.current) return;
+      if (!pointers.current.has(e.pointerId)) return;
+      pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
       const svg = svgRef.current;
       if (!svg) return;
       const rect = svg.getBoundingClientRect();
-      const scaleX = viewBox.width / rect.width;
-      const scaleY = viewBox.height / rect.height;
-      const dx = (e.clientX - panStart.current.x) * scaleX;
-      const dy = (e.clientY - panStart.current.y) * scaleY;
-      setViewBox(
-        clampViewBox({
-          x: panStart.current.vbX - dx,
-          y: panStart.current.vbY - dy,
-          width: viewBox.width,
-          height: viewBox.height,
-        }),
-      );
+
+      // Pinch-to-zoom with two fingers
+      if (pointers.current.size >= 2 && pinchStart.current) {
+        const pts = [...pointers.current.values()];
+        const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+        const cx = (pts[0].x + pts[1].x) / 2;
+        const cy = (pts[0].y + pts[1].y) / 2;
+        const ratio = dist / pinchStart.current.dist;
+        const newWidth = pinchStart.current.vb.width / ratio;
+        const newHeight = pinchStart.current.vb.height / ratio;
+        // Keep the SVG point under the initial midpoint anchored to the current midpoint
+        const fx = (cx - rect.left) / rect.width;
+        const fy = (cy - rect.top) / rect.height;
+        setViewBox(
+          clampViewBox({
+            x: pinchStart.current.centerSVG.x - fx * newWidth,
+            y: pinchStart.current.centerSVG.y - fy * newHeight,
+            width: newWidth,
+            height: newHeight,
+          }),
+        );
+        return;
+      }
+
+      // Single-finger / mouse pan
+      if (panStart.current) {
+        const scaleX = viewBox.width / rect.width;
+        const scaleY = viewBox.height / rect.height;
+        const dx = (e.clientX - panStart.current.x) * scaleX;
+        const dy = (e.clientY - panStart.current.y) * scaleY;
+        setViewBox(
+          clampViewBox({
+            x: panStart.current.vbX - dx,
+            y: panStart.current.vbY - dy,
+            width: viewBox.width,
+            height: viewBox.height,
+          }),
+        );
+      }
     },
-    [isPanning, viewBox, clampViewBox],
+    [viewBox, clampViewBox],
   );
 
-  const onPointerUp = useCallback(() => {
-    setIsPanning(false);
-    panStart.current = null;
+  const onPointerUp = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
+    pointers.current.delete(e.pointerId);
+    if (pointers.current.size < 2) pinchStart.current = null;
+    if (pointers.current.size === 0) {
+      panStart.current = null;
+      setIsPanning(false);
+    }
   }, []);
 
   const onDoubleClick = useCallback(() => {
-    setViewBox(initial);
-  }, [initial]);
+    setViewBox({ x: 0, y: 0, width: initialWidth, height: initialHeight });
+  }, [initialWidth, initialHeight]);
 
   return {
     svgRef,
     viewBox,
     isZoomed,
     isPanning,
-    handlers: { onPointerDown, onPointerMove, onPointerUp, onDoubleClick },
+    reset: onDoubleClick,
+    handlers: {
+      onPointerDown,
+      onPointerMove,
+      onPointerUp,
+      onPointerCancel: onPointerUp,
+      onDoubleClick,
+    },
   };
 }
 
@@ -176,19 +232,21 @@ export function CutPreview({ calculation, dimensions, shape, disabledSides, onTo
   const offsetY = (SVG_HEIGHT - scaledH) / 2;
 
   const showToggles = !isCircular && !!onToggleSide;
-  const { svgRef, viewBox: vb, isZoomed, isPanning, handlers } = usePanZoom(SVG_WIDTH, SVG_HEIGHT);
+  const { svgRef, viewBox: vb, isZoomed, isPanning, reset, handlers } = usePanZoom(SVG_WIDTH, SVG_HEIGHT);
 
-  const toggleButton = (side: SideKey, label: string, className: string) => {
+  const toggleButton = (side: SideKey, label: string) => {
     const isDisabled = !!disabledSides?.[side];
     return (
       <button
         type="button"
         onClick={() => onToggleSide!(side)}
-        className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+        aria-pressed={!isDisabled}
+        className={cn(
+          "min-h-11 flex-1 rounded border px-3 text-xs transition-colors sm:min-h-8 sm:flex-none",
           isDisabled
             ? "bg-muted text-muted-foreground border-dashed line-through"
-            : "bg-background text-foreground border-border hover:bg-accent"
-        } ${className}`}
+            : "bg-background text-foreground border-border hover:bg-accent",
+        )}
       >
         {label}
       </button>
@@ -200,22 +258,29 @@ export function CutPreview({ calculation, dimensions, shape, disabledSides, onTo
       <CardHeader>
         <CardTitle className="text-base">Schnittvorschau</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="flex flex-col items-center gap-1">
-          {showToggles && toggleButton("top", "Oben", "")}
-          <div className="flex items-center gap-1 w-full">
-            {showToggles && toggleButton("left", "Links", "")}
-            <svg
-              ref={svgRef}
-              viewBox={`${vb.x} ${vb.y} ${vb.width} ${vb.height}`}
-              className="flex-1 rounded-md border bg-white select-none"
-              style={{
-                maxHeight: 400,
-                cursor: isZoomed ? (isPanning ? "grabbing" : "grab") : "default",
-                touchAction: "none",
-              }}
-              {...handlers}
-            >
+      <CardContent className="px-0">
+        <div className="flex flex-col gap-2">
+          {showToggles && (
+            <div className="flex flex-wrap items-center gap-1.5 px-4">
+              <span className="mr-0.5 text-xs text-muted-foreground">Kanten:</span>
+              {toggleButton("top", "Oben")}
+              {toggleButton("bottom", "Unten")}
+              {toggleButton("left", "Links")}
+              {toggleButton("right", "Rechts")}
+            </div>
+          )}
+          <div className="relative">
+          <svg
+            ref={svgRef}
+            viewBox={`${vb.x} ${vb.y} ${vb.width} ${vb.height}`}
+            className="w-full rounded-md border bg-white select-none"
+            style={{
+              maxHeight: 400,
+              cursor: isZoomed ? (isPanning ? "grabbing" : "grab") : "default",
+              touchAction: "none",
+            }}
+            {...handlers}
+          >
               {/* Background grid */}
               <defs>
                 <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -244,23 +309,18 @@ export function CutPreview({ calculation, dimensions, shape, disabledSides, onTo
                 />
               )}
 
-              {/* Zoom hint overlay */}
-              {isZoomed && (
-                <text
-                  x={vb.x + vb.width - 8}
-                  y={vb.y + vb.height - 8}
-                  textAnchor="end"
-                  fontSize={Math.max(9, vb.width * 0.022)}
-                  fill="#999"
-                  pointerEvents="none"
-                >
-                  Doppelklick zum Zurücksetzen
-                </text>
-              )}
             </svg>
-            {showToggles && toggleButton("right", "Rechts", "")}
+            {isZoomed && (
+              <button
+                type="button"
+                onClick={reset}
+                className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-md border bg-background/90 px-2.5 py-1.5 text-xs text-muted-foreground shadow-sm backdrop-blur-sm transition-colors hover:text-foreground"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Zurücksetzen
+              </button>
+            )}
           </div>
-          {showToggles && toggleButton("bottom", "Unten", "")}
         </div>
       </CardContent>
     </Card>

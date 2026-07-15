@@ -81,7 +81,27 @@ export function MainPage() {
             Bohr- und Sägeassistent
           </span>
         </header>
-        <main className="flex-1 overflow-auto p-6">{content}</main>
+        <main className="flex-1 overflow-auto p-4 pb-16 md:p-6 md:pb-16">
+          {content}
+          <footer className="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <a
+              href="https://dimacon.io/impressum"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:text-foreground"
+            >
+              Impressum
+            </a>
+            <a
+              href="https://dimacon.io/datenschutz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:text-foreground"
+            >
+              Datenschutz
+            </a>
+          </footer>
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );
@@ -377,7 +397,7 @@ function PositionEditor({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={onBack}>
+        <Button variant="ghost" size="icon" className="size-11 sm:size-8" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
@@ -389,7 +409,7 @@ function PositionEditor({
           </p>
         </div>
         {!isNew && (
-          <Button variant="destructive" size="icon" onClick={handleDelete}>
+          <Button variant="destructive" size="icon" className="size-11 sm:size-8" onClick={handleDelete}>
             <Trash2 className="h-4 w-4" />
           </Button>
         )}

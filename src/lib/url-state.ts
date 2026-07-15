@@ -1,3 +1,4 @@
+import { deflateSync, inflateSync, strToU8, strFromU8 } from "fflate";
 import type { Position, MaterialType, DisabledSides, CalculationResult } from "../types";
 
 export interface UrlState {
@@ -177,27 +178,49 @@ export function urlPosToPosition(up: UrlPosition, index: number): Position {
   };
 }
 
+/** Marker für das komprimierte Format (v2). "." ist URL-unreserved und kommt
+ *  im base64url-Alphabet nicht vor, daher eindeutig von Alt-Links unterscheidbar. */
+const COMPRESSED_PREFIX = ".";
+
+function bytesToB64url(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function b64urlToBytes(s: string): Uint8Array {
+  let b64 = s.replace(/-/g, "+").replace(/_/g, "/");
+  while (b64.length % 4 !== 0) b64 += "=";
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
 export function encodeState(state: UrlState): string {
   const json = JSON.stringify(state);
-  const bytes = new TextEncoder().encode(json);
-  let binary = "";
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
-  }
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const jsonBytes = strToU8(json);
+
+  // Legacy-Format (roher base64url-JSON) – identisch zur alten Kodierung.
+  const legacy = bytesToB64url(jsonBytes);
+
+  // Komprimiertes Format (rohes DEFLATE, Level 9) mit Marker.
+  const compressed = COMPRESSED_PREFIX + bytesToB64url(deflateSync(jsonBytes, { level: 9 }));
+
+  // Immer die kürzere Variante wählen -> nie länger als bisher.
+  return compressed.length < legacy.length ? compressed : legacy;
 }
 
 export function decodeState(encoded: string): UrlState | null {
   try {
-    let b64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
-    while (b64.length % 4 !== 0) b64 += "=";
-    const binary = atob(b64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
+    let jsonBytes: Uint8Array;
+    if (encoded.startsWith(COMPRESSED_PREFIX)) {
+      jsonBytes = inflateSync(b64urlToBytes(encoded.slice(COMPRESSED_PREFIX.length)));
+    } else {
+      // Alt-Links: roher base64url-JSON ohne Kompression.
+      jsonBytes = b64urlToBytes(encoded);
     }
-    const json = new TextDecoder().decode(bytes);
-    return JSON.parse(json) as UrlState;
+    return JSON.parse(strFromU8(jsonBytes)) as UrlState;
   } catch {
     return null;
   }
