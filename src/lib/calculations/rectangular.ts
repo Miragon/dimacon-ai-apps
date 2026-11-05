@@ -134,7 +134,7 @@ export function calculateRectangularOpening(
 
   // Double if cutting from both sides
   const sideFactor = cutFromBothSides ? 2 : 1;
-  let totalLinearMeters = (horizontalLm + verticalLm - disabledHLm - disabledVLm) * sideFactor;
+  const totalLinearMeters = (horizontalLm + verticalLm - disabledHLm - disabledVLm) * sideFactor;
 
   // Generate cut lines and bore hole positions for SVG preview
   const cutLines = generateCutLines(widthMm, heightMm, horizontalCuts, verticalCuts, cutFromBothSides, disabledSides);

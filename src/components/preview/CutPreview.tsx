@@ -222,6 +222,37 @@ export function CutPreview({ calculation, dimensions, shape, disabledSides, onTo
     );
   }
 
+  return (
+    <CutPreviewCanvas
+      calculation={calculation}
+      dimensions={dimensions}
+      isCircular={isCircular}
+      drawWidth={drawWidth}
+      drawHeight={drawHeight}
+      disabledSides={disabledSides}
+      onToggleSide={onToggleSide}
+    />
+  );
+}
+
+// Eigene Komponente: usePanZoom bindet den Wheel-Listener beim Mount und braucht dafür das <svg>
+function CutPreviewCanvas({
+  calculation,
+  dimensions,
+  isCircular,
+  drawWidth,
+  drawHeight,
+  disabledSides,
+  onToggleSide,
+}: {
+  calculation: CalculationResult;
+  dimensions: Dimensions;
+  isCircular: boolean;
+  drawWidth: number;
+  drawHeight: number;
+  disabledSides?: DisabledSides;
+  onToggleSide?: (side: SideKey) => void;
+}) {
   const availW = SVG_WIDTH - 2 * PADDING;
   const availH = SVG_HEIGHT - 2 * PADDING;
   const scale = Math.min(availW / drawWidth, availH / drawHeight);
